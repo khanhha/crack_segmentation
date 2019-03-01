@@ -1,13 +1,10 @@
 import sys
 import os
-from optparse import OptionParser
 import numpy as np
 from pathlib import Path
-import cv2 as cv
 import torch
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
-from torch import optim
 import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.utils.data import DataLoader, Dataset
@@ -16,42 +13,9 @@ import random
 from PIL import Image
 from unet import UNet
 import matplotlib.pyplot as plt
-
-class ImgDataSet(Dataset):
-    def __init__(self, img_dir, img_fnames, img_transform, mask_dir, mask_fnames, mask_transform):
-        self.img_dir = img_dir
-        self.img_fnames = img_fnames
-        self.img_transform = img_transform
-
-        self.mask_dir = mask_dir
-        self.mask_fnames = mask_fnames
-        self.mask_transform = mask_transform
-
-        self.seed = np.random.randint(2147483647)
-
-    def __getitem__(self, i):
-        fname = self.img_fnames[i]
-        fpath = os.path.join(self.img_dir, fname)
-        img = Image.open(fpath)
-        if self.img_transform is not None:
-            random.seed(self.seed)
-            img = self.img_transform(img)
-            #print('image shape', img.shape)
-
-        mname = self.mask_fnames[i]
-        mpath = os.path.join(self.mask_dir, mname)
-        mask = Image.open(mpath)
-        #print('khanh1', np.min(test[:]), np.max(test[:]))
-        if self.mask_transform is not None:
-            mask = self.mask_transform(mask)
-            #print('mask shape', mask.shape)
-            #print('khanh2', np.min(test[:]), np.max(test[:]))
-
-        return img, mask #torch.from_numpy(np.array(mask, dtype=np.int64))
-
-    def __len__(self):
-        return len(self.img_fnames)
-
+import argparse
+from torchsummary import summary
+from data_loader import ImgDataSet
 
 def get_loss(dl, model):
     loss = 0
@@ -62,13 +26,46 @@ def get_loss(dl, model):
     loss = loss / len(dl)
     return loss
 
+from torch.nn.modules.module import _addindent
+def torch_summarize(model, show_weights=True, show_parameters=True):
+    """Summarizes torch model by showing trainable parameters and weights."""
+    tmpstr = model.__class__.__name__ + ' (\n'
+    for key, module in model._modules.items():
+        # if it contains layers let call it recursively to get params and weights
+        if type(module) in [
+            torch.nn.modules.container.Container,
+            torch.nn.modules.container.Sequential
+        ]:
+            modstr = torch_summarize(module)
+        else:
+            modstr = module.__repr__()
+        modstr = _addindent(modstr, 2)
+
+        params = sum([np.prod(p.size()) for p in module.parameters()])
+        weights = tuple([tuple(p.size()) for p in module.parameters()])
+
+        tmpstr += '  (' + key + '): ' + modstr
+        if show_weights:
+            tmpstr += ', weights={}'.format(weights)
+        if show_parameters:
+            tmpstr +=  ', parameters={}'.format(params)
+        tmpstr += '\n'
+
+    tmpstr = tmpstr + ')'
+    return tmpstr
+
+
 if __name__ == '__main__':
-    DIR_CHECKPOINT = '/home/khanhhh/data_1/courses/practical_project_1/codes/dataset/merged_segmentation_tmp/'
-    ROOT_DIR = '/home/khanhhh/data_1/courses/practical_project_1/codes/dataset/merged_segmentation'
-    DIR_IMG = f'{ROOT_DIR}/images/'
-    DIR_MASK = f'{ROOT_DIR}/masks/'
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-data_dir',type=str, help='input dataset directory')
+    parser.add_argument('-model_path', type=str, help='output dataset directory')
+    args = parser.parse_args()
+
+    DIR_IMG  = os.path.join(args.data_dir, 'images')
+    DIR_MASK = os.path.join(args.data_dir, 'masks')
     img_names  = [path.name for path in Path(DIR_IMG).glob('*.jpg')]
     mask_names = [path.name for path in Path(DIR_MASK).glob('*.jpg')]
+    print(f'total training images = {len(img_names)}')
 
     channel_means = (0.20166926, 0.28220195, 0.31729624)
     channel_stds = (0.20769505, 0.18813899, 0.16692209)
@@ -78,7 +75,7 @@ if __name__ == '__main__':
         bs = 8
         num_workers = 4
         lr = 0.001
-        epochs = 30
+        epochs = 5
         log_interval = 70  # less then len(train_dl)
 
     train_tfms = transforms.Compose([#transforms.Resize(param.img_size),
@@ -99,7 +96,7 @@ if __name__ == '__main__':
     model = UNet(n_channels=3, n_classes=1)
     model.cuda()
     cudnn.benchmark = True # faster convolutions, but more memory
-
+    print(torch_summarize(model))
     optimizer = torch.optim.Adam(model.parameters(), lr=param.lr)
     criterion = nn.BCELoss()
 
@@ -121,6 +118,8 @@ if __name__ == '__main__':
             # plt.show()
 
             true_masks_flat = y.view(-1)
+            #print(masks_probs_flat.shape)
+            #print(true_masks_flat.shape)
             loss = criterion(masks_probs_flat, true_masks_flat)
             epoch_loss += float(loss)
 
@@ -130,20 +129,27 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
-    model.eval()
-    for i in range(len(img_names)):
-        fname = img_names[i]
-        fpath = os.path.join(DIR_IMG, fname)
-        img_0 = Image.open(fpath)
-        img = train_tfms(img_0)
-        img = img.unsqueeze(0)
-        X = Variable(img).cuda()  # [N, 1, H, W]
-        masks_pred = model(X)
-        mask = F.sigmoid(masks_pred[0, 0]).data.cpu().numpy()
-        print('khanh_3 ',mask.shape)
-        mask = cv.resize((mask*255).astype(np.uint8), dsize=(480,320))
-        print(np.min(mask[:]), np.max(mask[:]))
-        plt.imshow(np.asarray(img_0, np.uint8))
-        plt.imshow(mask, alpha=0.5)
-        plt.show()
+    torch.save(model.state_dict(), args.model_path)
+
+    # model.eval()
+    # for i in range(len(img_names)):
+    #     fname = img_names[i]
+    #     fpath = os.path.join(DIR_IMG, fname)
+    #     img_0 = Image.open(fpath)
+    #     img = train_tfms(img_0)
+    #     img = img.unsqueeze(0)
+    #     X = Variable(img).cuda()  # [N, 1, H, W]
+    #     masks_pred = model(X)
+    #     mask = F.sigmoid(masks_pred[0, 0]).data.cpu().numpy()
+    #     print('khanh_3 ',mask.shape)
+    #     #mask = cv.resize((mask*255).astype(np.uint8), dsize=(224,224))
+    #     print(np.min(mask[:]), np.max(mask[:]))
+    #     plt.subplot(131)
+    #     plt.imshow(np.asarray(img_0, np.uint8))
+    #     plt.subplot(132)
+    #     plt.imshow(mask)
+    #     plt.subplot(133)
+    #     plt.imshow(np.asarray(img_0, np.uint8))
+    #     plt.imshow(mask, alpha=0.3)
+    #     plt.show()
 
