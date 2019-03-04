@@ -45,32 +45,19 @@ def adjust_learning_rate(optimizer, epoch):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
-
 def train(train_loader, model, criterion, optimizer, validation, args, step):
-
     # switch to train mode
     model.train()
-    
-    model_path = Path(args.model_dir) / 'model_{step}.pt'.format(step=step)
-
-    if model_path.exists():
-        state = torch.load(str(model_path))
+    if Path(args.model_path).exists():
+        state = torch.load(args.model_path)
         epoch = state['epoch']
-        step = state['step']
         model.load_state_dict(state['model'])
         print('Restored model, epoch {}, step {:,}'.format(epoch, step))
     else:
-        epoch = 1
-        step = 0
-
-    save = lambda ep: torch.save({
-        'model': model.state_dict(),
-        'epoch': ep,
-        'step': step,
-    }, str(model_path))
+        epoch = 0
 
     valid_losses = []
-
+    min_val_los = 9999
     for epoch in range(epoch, args.n_epoch + 1):
 
         adjust_learning_rate(optimizer, epoch)
@@ -105,12 +92,18 @@ def train(train_loader, model, criterion, optimizer, validation, args, step):
         valid_loss = valid_metrics['valid_loss']
         valid_losses.append(valid_loss)
         print(f'\n\tvalid_loss = {valid_loss:.5f}')
-
         tq.close()
+
+        if valid_loss < min_val_los:
+            min_val_los = valid_loss
+
+            torch.save({
+                'model': model.state_dict(),
+                'epoch': epoch
+            }, args.model_path)
 
 def validate(model, val_loader, criterion):
     losses = AverageMeter()
-    # switch to evaluate mode
     model.eval()
     with torch.no_grad():
         for i, (input, target) in enumerate(val_loader):
@@ -132,14 +125,15 @@ def save_check_point(state, is_best, file_name = 'checkpoint.pth.tar'):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
     parser.add_argument('-n_epoch', default=10, type=int, metavar='N', help='number of total epochs to run')
-    parser.add_argument('-lr', default=0.1, type=float, metavar='LR', help='initial learning rate')
+    parser.add_argument('-lr', default=0.001, type=float, metavar='LR', help='initial learning rate')
     parser.add_argument('-momentum', default=0.9, type=float, metavar='M', help='momentum')
     parser.add_argument('-print_freq', default=20, type=int, metavar='N', help='print frequency (default: 10)')
     parser.add_argument('-weight_decay', default=1e-4, type=float, metavar='W', help='weight decay (default: 1e-4)')
     parser.add_argument('-batch_size',  default=4, type=int,  help='weight decay (default: 1e-4)')
+    parser.add_argument('-num_workers', default=4, type=int, help='output dataset directory')
 
     parser.add_argument('-data_dir',type=str, help='input dataset directory')
-    parser.add_argument('-model_dir', type=str, help='output dataset directory')
+    parser.add_argument('-model_path', type=str, help='output dataset directory')
 
     args = parser.parse_args()
 
@@ -153,16 +147,16 @@ if __name__ == '__main__':
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+    model = get_model(device)
+
+    optimizer = torch.optim.SGD(model.parameters(), args.lr,
+                                momentum=args.momentum,
+                                weight_decay=args.weight_decay)
+
+    criterion = nn.BCEWithLogitsLoss()
+
     channel_means = [0.485, 0.456, 0.406]
     channel_stds  = [0.229, 0.224, 0.225]
-    class param:
-        bs = 4
-        num_workers = 4
-        lr = 0.001
-        epochs = 5
-        log_interval = 70  # less then len(train_dl)
-
-
     train_tfms = transforms.Compose([transforms.ToTensor(),
                                      transforms.Normalize(channel_means, channel_stds)])
 
@@ -171,28 +165,13 @@ if __name__ == '__main__':
 
     mask_tfms = transforms.Compose([transforms.ToTensor()])
 
-
-    model = get_model(device)
-
-    # print(model)
-    # exit()
-
-    optimizer = torch.optim.SGD(model.parameters(), args.lr,
-                                momentum=args.momentum,
-                                weight_decay=args.weight_decay)
-
-    criterion = nn.BCEWithLogitsLoss()
-
-    # optimizer = torch.optim.Adam(model.parameters(), lr=param.lr)
-    # criterion = nn.BCELoss()
-
     dataset = ImgDataSet(img_dir=DIR_IMG, img_fnames=img_names, img_transform=train_tfms, mask_dir=DIR_MASK, mask_fnames=mask_names, mask_transform=mask_tfms)
     train_size = int(0.85*len(dataset))
     valid_size = len(dataset) - train_size
     train_dataset, valid_dataset = random_split(dataset, [train_size, valid_size])
 
-    train_loader = DataLoader(train_dataset, param.bs, shuffle=False, pin_memory=torch.cuda.is_available(), num_workers=param.num_workers)
-    valid_loader = DataLoader(train_dataset, param.bs, shuffle=False, pin_memory=torch.cuda.is_available(), num_workers=param.num_workers)
+    train_loader = DataLoader(train_dataset, args.batch_size, shuffle=False, pin_memory=torch.cuda.is_available(), num_workers=args.num_workers)
+    valid_loader = DataLoader(train_dataset, args.batch_size, shuffle=False, pin_memory=torch.cuda.is_available(), num_workers=args.num_workers)
 
     model.cuda()
 
