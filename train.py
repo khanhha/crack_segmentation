@@ -15,7 +15,8 @@ from unet import UNet
 import matplotlib.pyplot as plt
 import argparse
 from torchsummary import summary
-from data_loader import ImgDataSet
+from data_loader import CrackDataset
+
 
 def get_loss(dl, model):
     loss = 0
@@ -25,34 +26,6 @@ def get_loss(dl, model):
         loss += F.cross_entropy(output, y).data[0]
     loss = loss / len(dl)
     return loss
-
-from torch.nn.modules.module import _addindent
-def torch_summarize(model, show_weights=True, show_parameters=True):
-    """Summarizes torch model by showing trainable parameters and weights."""
-    tmpstr = model.__class__.__name__ + ' (\n'
-    for key, module in model._modules.items():
-        # if it contains layers let call it recursively to get params and weights
-        if type(module) in [
-            torch.nn.modules.container.Container,
-            torch.nn.modules.container.Sequential
-        ]:
-            modstr = torch_summarize(module)
-        else:
-            modstr = module.__repr__()
-        modstr = _addindent(modstr, 2)
-
-        params = sum([np.prod(p.size()) for p in module.parameters()])
-        weights = tuple([tuple(p.size()) for p in module.parameters()])
-
-        tmpstr += '  (' + key + '): ' + modstr
-        if show_weights:
-            tmpstr += ', weights={}'.format(weights)
-        if show_parameters:
-            tmpstr +=  ', parameters={}'.format(params)
-        tmpstr += '\n'
-
-    tmpstr = tmpstr + ')'
-    return tmpstr
 
 
 if __name__ == '__main__':
@@ -89,7 +62,7 @@ if __name__ == '__main__':
     mask_tfms = transforms.Compose([#transforms.Resize(param.img_size,interpolation=Image.NEAREST),
                                     transforms.ToTensor()])
 
-    train_dl = DataLoader(ImgDataSet(img_dir=DIR_IMG, img_fnames=img_names, img_transform=train_tfms, mask_dir=DIR_MASK, mask_fnames=mask_names, mask_transform=mask_tfms),
+    train_dl = DataLoader(CrackDataset(img_dir=DIR_IMG, img_fnames=img_names, img_transform=train_tfms, mask_dir=DIR_MASK, mask_fnames=mask_names, mask_transform=mask_tfms),
                           param.bs, shuffle=True, pin_memory=torch.cuda.is_available(), num_workers=param.num_workers)
 
 

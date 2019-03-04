@@ -12,14 +12,14 @@ from torch.utils.data import DataLoader, Dataset
 import torchvision.transforms as transforms
 import random
 from unet import UNet
-from unet.unet_transfer import UNet16
+from unet.unet_transfer import UNetVGG16
 import matplotlib.pyplot as plt
 import argparse
 from os.path import join
 from PIL import Image
 
 def load_unet_vgg16(model_path):
-    model = UNet16(pretrained=True)
+    model = UNetVGG16(pretrained=True)
     checkpoint = torch.load(model_path)
     model.load_state_dict(checkpoint['state_dict'])
     model.cuda()

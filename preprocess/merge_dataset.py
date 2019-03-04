@@ -104,7 +104,7 @@ def copy_CRACK500(in_dir, out_dir_img, out_dir_mask, id):
 
     root_dir = os.path.join(in_dir, id)
 
-    subdir_names = ['testdata', 'traindata', 'valdata']
+    subdir_names = ['testcrop', 'traincrop', 'valcrop']
     cnt = 0
     for subdir_name in subdir_names:
         dir = join(*[root_dir, subdir_name])
@@ -117,30 +117,31 @@ def copy_CRACK500(in_dir, out_dir_img, out_dir_mask, id):
                 img_paths[path.stem] = path
 
         for path in Path(dir).glob('*.png'):
-            if '_mask' not in path.name:
-                print(f'strange mask file pattern {str(path)}')
-                continue
-
-            name = path.stem.replace('_mask','')
-            if name not in img_paths:
+            if path.stem not in img_paths:
                 print(f'no image file for the mask {str(path)}')
                 continue
 
             mask  = cv.imread(str(path))
-            img_path = str(img_paths[name])
+            img_path = str(img_paths[path.stem])
             img = cv.imread(img_path)
-            if mask.shape != img.shape:
-                mask = cv.transpose(mask)
-                if mask.shape != img.shape:
-                    print(f'mismatched img-mask shape {name} : {img.shape} - {mask.shape}')
-                    continue
+
+            # import matplotlib.pyplot as plt
+            # plt.subplot(131)
+            # plt.imshow(img)
+            # plt.subplot(132)
+            # plt.imshow(mask)
+            # plt.subplot(133)
+            # plt.imshow(img)
+            # plt.imshow(mask, alpha=0.5)
+            # plt.title(path.stem)
+            # plt.show()
 
             img = cv.resize(img, dsize=img_size)
             mask = cv.cvtColor(mask, cv.COLOR_BGR2GRAY)
             mask = cv.resize(mask, dsize=img_size, interpolation=cv.INTER_NEAREST)
 
-            cv.imwrite(filename=join(*[out_dir_img,  f'{id}_{path.name}.jpg']),  img = img)
-            cv.imwrite(filename=join(*[out_dir_mask, f'{id}_{path.name}.jpg']), img = mask)
+            cv.imwrite(filename=join(*[out_dir_img,  f'{id}_{path.stem}.jpg']),  img = img)
+            cv.imwrite(filename=join(*[out_dir_mask, f'{id}_{path.stem}.jpg']), img = mask)
 
             cnt +=1
 

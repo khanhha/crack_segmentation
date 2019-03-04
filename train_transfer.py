@@ -2,7 +2,6 @@ import torch
 from torch import nn
 from unet.unet_transfer import UNet16
 from pathlib import Path
-from torch.nn import functional as F
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, Dataset, random_split
 from torch.autograd import Variable
@@ -10,6 +9,8 @@ import shutil
 from data_loader import ImgDataSet
 import os
 import argparse
+import tqdm
+import numpy as np
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
@@ -44,31 +45,70 @@ def adjust_learning_rate(optimizer, epoch):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
-def train(train_loader, model, criterion, optimizer, epoch, args):
+
+def train(train_loader, model, criterion, optimizer, validation, args, step):
+
     # switch to train mode
     model.train()
-    for i, (input, target) in enumerate(train_loader):
-        #target = target.cuda(async=True)
-        input_var  = Variable(input).cuda()
-        target_var = Variable(target).cuda()
+    
+    model_path = Path(args.model_dir) / 'model_{step}.pt'.format(step=step)
 
-        masks_pred = model(input_var)
+    if model_path.exists():
+        state = torch.load(str(model_path))
+        epoch = state['epoch']
+        step = state['step']
+        model.load_state_dict(state['model'])
+        print('Restored model, epoch {}, step {:,}'.format(epoch, step))
+    else:
+        epoch = 1
+        step = 0
 
-        masks_probs_flat = masks_pred.view(-1)
-        true_masks_flat  = target_var.view(-1)
+    save = lambda ep: torch.save({
+        'model': model.state_dict(),
+        'epoch': ep,
+        'step': step,
+    }, str(model_path))
 
-        #assert (masks_probs_flat >= 0. & masks_probs_flat <= 1.).all()
-        loss = criterion(masks_probs_flat, true_masks_flat)
+    valid_losses = []
 
-        if i % args.print_freq == 0:
-            print('{0:.4f} --- loss: {1:.6f}'.format(i, float(loss)))
+    for epoch in range(epoch, args.n_epoch + 1):
 
-        # compute gradient and do SGD step
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        adjust_learning_rate(optimizer, epoch)
 
-def validate(val_loader, model, criterion, args):
+        tq = tqdm.tqdm(total=(len(train_loader) * args.batch_size))
+        tq.set_description(f'Epoch {epoch}')
+
+        losses = AverageMeter()
+
+        model.train()
+        for i, (input, target) in enumerate(train_loader):
+            input_var  = Variable(input).cuda()
+            target_var = Variable(target).cuda()
+
+            masks_pred = model(input_var)
+
+            masks_probs_flat = masks_pred.view(-1)
+            true_masks_flat  = target_var.view(-1)
+
+            #assert (masks_probs_flat >= 0. & masks_probs_flat <= 1.).all()
+            loss = criterion(masks_probs_flat, true_masks_flat)
+            losses.update(loss)
+            tq.set_postfix(loss='{:.5f}'.format(losses.avg))
+            tq.update(args.batch_size)
+
+            # compute gradient and do SGD step
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+        valid_metrics = validation(model, valid_loader, criterion)
+        valid_loss = valid_metrics['valid_loss']
+        valid_losses.append(valid_loss)
+        print(f'\n\tvalid_loss = {valid_loss:.5f}')
+
+        tq.close()
+
+def validate(model, val_loader, criterion):
     losses = AverageMeter()
     # switch to evaluate mode
     model.eval()
@@ -82,9 +122,7 @@ def validate(val_loader, model, criterion, args):
 
             losses.update(loss.item(), input_var.size(0))
 
-    print(f'valid loss = {losses.avg}')
-
-    return losses.avg
+    return {'valid_loss':losses.avg}
 
 def save_check_point(state, is_best, file_name = 'checkpoint.pth.tar'):
     torch.save(state, file_name)
@@ -93,14 +131,15 @@ def save_check_point(state, is_best, file_name = 'checkpoint.pth.tar'):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
-    parser.add_argument('--epochs', default=10, type=int, metavar='N', help='number of total epochs to run')
-    parser.add_argument('--lr', '--learning-rate', default=0.1, type=float, metavar='LR', help='initial learning rate')
-    parser.add_argument('--momentum', default=0.9, type=float, metavar='M', help='momentum')
-    parser.add_argument('-p', '--print-freq', default=20, type=int, metavar='N', help='print frequency (default: 10)')
-    parser.add_argument('--weight-decay', '--wd', default=1e-4, type=float, metavar='W', help='weight decay (default: 1e-4)')
+    parser.add_argument('-n_epoch', default=10, type=int, metavar='N', help='number of total epochs to run')
+    parser.add_argument('-lr', default=0.1, type=float, metavar='LR', help='initial learning rate')
+    parser.add_argument('-momentum', default=0.9, type=float, metavar='M', help='momentum')
+    parser.add_argument('-print_freq', default=20, type=int, metavar='N', help='print frequency (default: 10)')
+    parser.add_argument('-weight_decay', default=1e-4, type=float, metavar='W', help='weight decay (default: 1e-4)')
+    parser.add_argument('-batch_size',  default=4, type=int,  help='weight decay (default: 1e-4)')
 
     parser.add_argument('-data_dir',type=str, help='input dataset directory')
-    parser.add_argument('-model_path', type=str, help='output dataset directory')
+    parser.add_argument('-model_dir', type=str, help='output dataset directory')
 
     args = parser.parse_args()
 
@@ -135,8 +174,8 @@ if __name__ == '__main__':
 
     model = get_model(device)
 
-    print(model)
-    exit()
+    # print(model)
+    # exit()
 
     optimizer = torch.optim.SGD(model.parameters(), args.lr,
                                 momentum=args.momentum,
@@ -157,22 +196,5 @@ if __name__ == '__main__':
 
     model.cuda()
 
-    min_loss = 999
-    for epoch in range(0, args.epochs):
+    train(train_loader, model, criterion, optimizer, validate, args, step=0)
 
-        adjust_learning_rate(optimizer, epoch)
-
-        train(train_loader, model, criterion, optimizer, epoch, args)
-
-        loss = validate(valid_loader, model, criterion, args)
-
-        is_best = loss < min_loss
-        min_loss = min(min_loss, loss)
-
-        save_checkpoint({
-            'epoch': epoch + 1,
-            'arch':  'vgg16',
-            'state_dict': model.state_dict(),
-            'best_loss': min_loss,
-            'optimizer': optimizer.state_dict(),
-        }, is_best, filename=args.model_path)
