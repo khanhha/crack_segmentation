@@ -29,10 +29,6 @@ class AverageMeter(object):
         self.count += n
         self.avg = self.sum / self.count
 
-def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
-    torch.save(state, filename)
-    if is_best:
-        shutil.copyfile(filename, 'model_best.pth.tar')
 
 def get_model(device):
     model = UNet16(pretrained=True)
@@ -45,14 +41,14 @@ def adjust_learning_rate(optimizer, epoch):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
-def train(train_loader, model, criterion, optimizer, validation, args, step):
+def train(train_loader, model, criterion, optimizer, validation, args):
     # switch to train mode
     model.train()
     if Path(args.model_path).exists():
         state = torch.load(args.model_path)
         epoch = state['epoch']
         model.load_state_dict(state['model'])
-        print('Restored model, epoch {}, step {:,}'.format(epoch, step))
+        print('Restored model, epoch {}'.format(epoch))
     else:
         epoch = 0
 
@@ -175,5 +171,5 @@ if __name__ == '__main__':
 
     model.cuda()
 
-    train(train_loader, model, criterion, optimizer, validate, args, step=0)
+    train(train_loader, model, criterion, optimizer, validate, args)
 
