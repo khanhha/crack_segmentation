@@ -12,6 +12,8 @@ from os.path import join
 img_size = (448, 448)
 
 def copy_forest(in_dir, out_dir, id):
+    print(f'start copying {id}')
+
     forest_dir = os.path.join(in_dir, id)
 
     mask_dir = os.path.join(forest_dir,'groundTruth')
@@ -52,6 +54,8 @@ def copy_forest(in_dir, out_dir, id):
     #     plt.show()
 
 def copy_cracktree200(in_dir, out_dir, id):
+    print(f'start copying {id}')
+
     root_dir = os.path.join(in_dir, id)
     img_dir = os.path.join(root_dir,'cracktree200rgb')
     mask_dir = os.path.join(root_dir,'cracktree200_gt')
@@ -75,6 +79,8 @@ def copy_cracktree200(in_dir, out_dir, id):
         cv.imwrite(filename=outpath, img = img)
 
 def copy_GAPS384(in_dir, out_dir, id):
+    print(f'start copying {id}')
+
     root_dir = os.path.join(in_dir, id)
     img_dir = os.path.join(root_dir,'croppedimg')
     mask_dir = os.path.join(root_dir,'croppedgt')
@@ -101,6 +107,7 @@ def copy_GAPS384(in_dir, out_dir, id):
         cv.imwrite(filename=outpath, img = img)
 
 def copy_CRACK500(in_dir, out_dir_img, out_dir_mask, id):
+    print(f'start copying {id}')
 
     root_dir = os.path.join(in_dir, id)
 
@@ -148,6 +155,8 @@ def copy_CRACK500(in_dir, out_dir_img, out_dir_mask, id):
     print(f'copied {cnt} image-mask pairs from {id}')
 
 def copy_CFD(in_dir, out_dir_img, out_dir_mask, id):
+    print(f'start copying {id}')
+
     img_dir = join(*[in_dir, id, 'cfd_image'])
     mask_dir = join(*[in_dir, id, 'cfd_gt', 'seg_gt'])
 
@@ -168,6 +177,38 @@ def copy_CFD(in_dir, out_dir_img, out_dir_mask, id):
             continue
 
         img = cv.resize(img, dsize=img_size)
+        mask = cv.cvtColor(mask, cv.COLOR_BGR2GRAY)
+        mask = cv.resize(mask, dsize=img_size, interpolation=cv.INTER_NEAREST)
+
+        cv.imwrite(filename=join(*[out_dir_img, f'{id}_{path.name}.jpg']), img=img)
+        cv.imwrite(filename=join(*[out_dir_mask, f'{id}_{path.name}.jpg']), img=mask)
+
+        cnt += 1
+
+    print(f'copied {cnt} image-mask pairs from {id}')
+
+def copy_noncrack(in_dir, out_dir_img, out_dir_mask, id):
+    print(f'start copying {id}')
+    img_dir = join(*[in_dir, id, 'images'])
+    mask_dir = join(*[in_dir, id, 'masks'])
+
+    mask_names = set(path.stem for path in Path(mask_dir).glob('*.jpg'))
+
+    cnt= 0
+    for path in Path(img_dir).glob('*.jpg'):
+
+        if path.stem not in mask_names:
+            print(f'no mask found for the image {path}')
+            continue
+
+        img  = cv.imread(str(path))
+        mask = cv.imread(join(*[mask_dir, f'{path.stem}.jpg']))
+
+        if mask.shape != img.shape:
+            print(f'mismatched img-mask shape {name} : {img.shape} - {mask.shape}')
+            continue
+
+        img = cv.resize(img, dsize=img_size, interpolation=cv.INTER_AREA)
         mask = cv.cvtColor(mask, cv.COLOR_BGR2GRAY)
         mask = cv.resize(mask, dsize=img_size, interpolation=cv.INTER_NEAREST)
 
@@ -203,6 +244,7 @@ if __name__ == '__main__':
     rm_files(img_dir)
     rm_files(mask_dir)
 
+
     id_0 = 'forest'
     copy_forest(args.in_dir, args.out_dir, id=id_0)
     id_1 = 'cracktree200'
@@ -213,6 +255,8 @@ if __name__ == '__main__':
     copy_CRACK500(args.in_dir, out_dir_img=img_dir, out_dir_mask=mask_dir, id=id_3)
     id_4 = 'CFD'
     copy_CFD(args.in_dir, out_dir_img=img_dir, out_dir_mask=mask_dir, id=id_4)
+    id_5 = 'noncrack'
+    copy_noncrack(args.in_dir, out_dir_img=img_dir, out_dir_mask=mask_dir, id=id_5)
 
     fnames = [path.name for path in Path(img_dir).glob('*.*')]
     labels = np.zeros(len(fnames), dtype=np.int)
@@ -227,6 +271,8 @@ if __name__ == '__main__':
             l = 4
         elif id_4 in name:
             l = 5
+        elif id_5 in name:
+            l = 6
         else:
             l=0
         labels[i] = l
