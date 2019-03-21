@@ -44,10 +44,12 @@ def evaluate_img(model, img):
     return mask
 
 def evaluate_img_patch(model, img):
-
     input_width, input_height = input_size[0], input_size[1]
 
     img_height, img_width, img_channels = img.shape
+
+    if img_width < input_width or img_height < input_height:
+        return evaluate_img(model, img)
 
     stride_ratio = 0.2
     stride = int(input_width * stride_ratio)
@@ -99,8 +101,8 @@ if __name__ == '__main__':
     channel_stds  = [0.229, 0.224, 0.225]
 
     for path in Path(args.img_dir).glob('*.*'):
-        # if '01-00-01' not in path.stem:
-        #     continue
+        # if '01-06-03' not in path.stem:
+        #      continue
         print(str(path))
 
         train_tfms = transforms.Compose([transforms.ToTensor(), transforms.Normalize(channel_means, channel_stds)])
@@ -112,24 +114,25 @@ if __name__ == '__main__':
         prob_map = evaluate_img_patch(model, img_0)
 
         plt.clf()
-        plt.subplot(321)
+        plt.subplot(231)
         plt.imshow(img_0)
-        plt.subplot(322)
+        plt.subplot(232)
         plt.imshow(prob_map)
-        plt.subplot(323)
+        plt.subplot(233)
         plt.imshow(img_0)
         plt.imshow(prob_map, alpha=0.5)
-        plt.savefig(join(args.out_dir, f'{path.stem}.jpg'), dpi=500)
 
         mask = evaluate_img(model, img_0)
 
-        plt.subplot(324)
+        plt.subplot(234)
         plt.imshow(img_0)
-        plt.subplot(325)
+        plt.subplot(235)
         plt.imshow(mask)
-        plt.subplot(326)
+        plt.subplot(236)
         plt.imshow(img_0)
         plt.imshow(mask, alpha=0.5)
-        plt.savefig(join(args.out_dir, f'{path.stem}_full.jpg'), dpi=500)
+        #plt.show()
+
+        plt.savefig(join(args.out_dir, f'{path.stem}.jpg'), dpi=500)
 
         gc.collect()
