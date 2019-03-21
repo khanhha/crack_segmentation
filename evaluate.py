@@ -84,6 +84,13 @@ def evaluate_img_patch(model, img):
 
     return probability_map
 
+def disable_axis():
+    plt.axis('off')
+    plt.gca().axes.get_xaxis().set_visible(False)
+    plt.gca().axes.get_yaxis().set_visible(False)
+    plt.gca().axes.get_xaxis().set_ticklabels([])
+    plt.gca().axes.get_yaxis().set_ticklabels([])
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-img_dir',type=str, help='input dataset directory')
@@ -92,8 +99,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     os.makedirs(args.out_dir, exist_ok=True)
-    for path in Path(args.out_dir).glob('*.*'):
-        os.remove(str(path))
+    #for path in Path(args.out_dir).glob('*.*'):
+    #    os.remove(str(path))
 
     model = load_unet_vgg16(args.model_path)
 
@@ -101,8 +108,9 @@ if __name__ == '__main__':
     channel_stds  = [0.229, 0.224, 0.225]
 
     for path in Path(args.img_dir).glob('*.*'):
-        # if '01-06-03' not in path.stem:
-        #      continue
+        # if '01-01-01' not in path.stem:
+        #       continue
+
         print(str(path))
 
         train_tfms = transforms.Compose([transforms.ToTensor(), transforms.Normalize(channel_means, channel_stds)])
@@ -114,21 +122,21 @@ if __name__ == '__main__':
         prob_map = evaluate_img_patch(model, img_0)
 
         plt.clf()
-        plt.subplot(231)
+        plt.subplot(231); disable_axis()
         plt.imshow(img_0)
-        plt.subplot(232)
+        plt.subplot(232); disable_axis()
         plt.imshow(prob_map)
-        plt.subplot(233)
+        plt.subplot(233); disable_axis()
         plt.imshow(img_0)
         plt.imshow(prob_map, alpha=0.5)
 
         mask = evaluate_img(model, img_0)
 
-        plt.subplot(234)
+        plt.subplot(234); disable_axis()
         plt.imshow(img_0)
-        plt.subplot(235)
+        plt.subplot(235); disable_axis()
         plt.imshow(mask)
-        plt.subplot(236)
+        plt.subplot(236); disable_axis()
         plt.imshow(img_0)
         plt.imshow(mask, alpha=0.5)
         #plt.show()

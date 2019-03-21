@@ -267,9 +267,6 @@ if __name__ == '__main__':
     rm_files(img_dir)
     rm_files(mask_dir)
 
-
-    id_6 = 'volker'
-    copy_Volker(args.in_dir, out_dir_img=img_dir, out_dir_mask=mask_dir, id=id_6)
     id_0 = 'forest'
     copy_forest(args.in_dir, args.out_dir, id=id_0)
     id_1 = 'cracktree200'
