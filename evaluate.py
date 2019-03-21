@@ -4,69 +4,132 @@ import numpy as np
 from pathlib import Path
 import cv2 as cv
 import torch
-import torch.backends.cudnn as cudnn
-import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-from torch.utils.data import DataLoader, Dataset
 import torchvision.transforms as transforms
-import random
-from unet import UNet
-from unet.unet_transfer import UNetVGG16
+from unet.unet_transfer import UNet16, input_size
 import matplotlib.pyplot as plt
 import argparse
 from os.path import join
 from PIL import Image
+import gc
 
 def load_unet_vgg16(model_path):
-    model = UNetVGG16(pretrained=True)
+    model = UNet16(pretrained=True)
     checkpoint = torch.load(model_path)
-    model.load_state_dict(checkpoint['state_dict'])
+    if 'model' in checkpoint:
+        model.load_state_dict(checkpoint['model'])
+    elif 'state_dict' in checkpoint:
+        model.load_state_dict(checkpoint['check_point'])
+    else:
+        raise Exception('undefind model format')
+
     model.cuda()
     model.eval()
+
     return model
 
-def load_unet(model_path):
-    model = UNet(n_channels=3, n_classes=1)
-    model.cuda()
-    model.load_state_dict(torch.load(args.model_path))
-    model.eval()
-    return model
+def evaluate_img(model, img):
+    input_width, input_height = input_size[0], input_size[1]
+
+    img_1 = cv.resize(img, (input_width, input_height), cv.INTER_AREA)
+    X = train_tfms(Image.fromarray(img_1))
+    X = Variable(X.unsqueeze(0)).cuda()  # [N, 1, H, W]
+
+    mask = model(X)
+
+    mask = F.sigmoid(mask[0, 0]).data.cpu().numpy()
+    mask = cv.resize(mask, (img_width, img_height), cv.INTER_AREA)
+
+    return mask
+
+def evaluate_img_patch(model, img):
+
+    input_width, input_height = input_size[0], input_size[1]
+
+    img_height, img_width, img_channels = img.shape
+
+    stride_ratio = 0.2
+    stride = int(input_width * stride_ratio)
+
+    normalization_map = np.zeros((img_height, img_width), dtype=np.int16)
+
+    patches = []
+    patch_locs = []
+    for y in range(0, img_height - input_height + 1, stride):
+        for x in range(0, img_width - input_width + 1, stride):
+            segment = img[y:y + input_height, x:x + input_width]
+            normalization_map[y:y + input_height, x:x + input_width] += 1
+            patches.append(segment)
+            patch_locs.append((x, y))
+
+    patches = np.array(patches)
+    if len(patch_locs) <= 0:
+        return None
+
+    preds = []
+    for i, patch in enumerate(patches):
+        patch_n = train_tfms(Image.fromarray(patch))
+        X = Variable(patch_n.unsqueeze(0)).cuda()  # [N, 1, H, W]
+        masks_pred = model(X)
+        mask = F.sigmoid(masks_pred[0, 0]).data.cpu().numpy()
+        preds.append(mask)
+
+    probability_map = np.zeros((img_height, img_width), dtype=float)
+    for i, response in enumerate(preds):
+        coords = patch_locs[i]
+        probability_map[coords[1]:coords[1] + input_height, coords[0]:coords[0] + input_width] += response
+
+    return probability_map
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-test_dir',type=str, help='input dataset directory')
+    parser.add_argument('-img_dir',type=str, help='input dataset directory')
     parser.add_argument('-model_path', type=str, help='trained model path')
     parser.add_argument('-out_dir', type=str, help='trained model path')
     args = parser.parse_args()
 
     os.makedirs(args.out_dir, exist_ok=True)
+    for path in Path(args.out_dir).glob('*.*'):
+        os.remove(str(path))
 
     model = load_unet_vgg16(args.model_path)
 
     channel_means = [0.485, 0.456, 0.406]
     channel_stds  = [0.229, 0.224, 0.225]
 
-    train_tfms = transforms.Compose([transforms.ToTensor(), transforms.Normalize(channel_means, channel_stds)])
-
-    for path in Path(join(args.test_dir, 'images')).glob('*.*'):
+    for path in Path(args.img_dir).glob('*.*'):
+        # if '01-00-01' not in path.stem:
+        #     continue
         print(str(path))
+
+        train_tfms = transforms.Compose([transforms.ToTensor(), transforms.Normalize(channel_means, channel_stds)])
+
         img_0 = Image.open(str(path))
-        img = train_tfms(img_0)
-        img = img.unsqueeze(0)
-        X = Variable(img).cuda()  # [N, 1, H, W]
-        masks_pred = model(X)
-        mask = F.sigmoid(masks_pred[0, 0]).data.cpu().numpy()
+        img_0 = np.asarray(img_0)
+        img_height, img_width, img_channels = img_0.shape
+
+        prob_map = evaluate_img_patch(model, img_0)
+
         plt.clf()
-        plt.axis('off')
-        plt.subplot(131)
-        plt.imshow(np.asarray(img_0, np.uint8))
-        plt.axis('off')
-        plt.subplot(132)
+        plt.subplot(321)
+        plt.imshow(img_0)
+        plt.subplot(322)
+        plt.imshow(prob_map)
+        plt.subplot(323)
+        plt.imshow(img_0)
+        plt.imshow(prob_map, alpha=0.5)
+        plt.savefig(join(args.out_dir, f'{path.stem}.jpg'), dpi=500)
+
+        mask = evaluate_img(model, img_0)
+
+        plt.subplot(324)
+        plt.imshow(img_0)
+        plt.subplot(325)
         plt.imshow(mask)
-        plt.axis('off')
-        plt.subplot(133)
-        plt.imshow(np.asarray(img_0, np.uint8))
-        plt.imshow(mask, alpha=0.3)
-        plt.axis('off')
-        plt.savefig(join(args.out_dir, path.name), dpi=300)
+        plt.subplot(326)
+        plt.imshow(img_0)
+        plt.imshow(mask, alpha=0.5)
+        plt.savefig(join(args.out_dir, f'{path.stem}_full.jpg'), dpi=500)
+
+        gc.collect()

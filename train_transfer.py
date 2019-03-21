@@ -4,6 +4,7 @@ from unet.unet_transfer import UNet16
 from pathlib import Path
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, Dataset, random_split
+import torch.nn.functional as F
 from torch.autograd import Variable
 import shutil
 from data_loader import ImgDataSet
@@ -11,6 +12,7 @@ import os
 import argparse
 import tqdm
 import numpy as np
+import scipy.ndimage as ndimage
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
@@ -28,7 +30,6 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
-
 
 def get_model(device):
     model = UNet16(pretrained=True)
@@ -102,6 +103,10 @@ def validate(model, val_loader, criterion):
     losses = AverageMeter()
     model.eval()
     with torch.no_grad():
+
+        tq = tqdm.tqdm(total=(len(val_loader) * args.batch_size))
+        tq.set_description(f'Validation ')
+
         for i, (input, target) in enumerate(val_loader):
             input_var = Variable(input).cuda()
             target_var = Variable(target).cuda()
@@ -111,12 +116,31 @@ def validate(model, val_loader, criterion):
 
             losses.update(loss.item(), input_var.size(0))
 
-    return {'valid_loss':losses.avg}
+            tq.set_postfix(loss='{:.5f}'.format(losses.avg))
+            tq.update(args.batch_size)
+
+        tq.close()
+
+    return {'valid_loss': losses.avg}
 
 def save_check_point(state, is_best, file_name = 'checkpoint.pth.tar'):
     torch.save(state, file_name)
     if is_best:
         shutil.copy(file_name, 'model_best.pth.tar')
+
+def calc_crack_pixel_weight(mask_dir):
+    avg_w = 0.0
+    n_files = 0
+    for path in Path(mask_dir).glob('*.*'):
+        n_files += 1
+        m = ndimage.imread(path)
+        ncrack = np.sum((m > 0)[:])
+        w = float(ncrack)/(m.shape[0]*m.shape[1])
+        avg_w = avg_w + (1-w)
+
+    avg_w /= float(n_files)
+
+    return avg_w / (1.0 - avg_w)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
@@ -149,7 +173,9 @@ if __name__ == '__main__':
                                 momentum=args.momentum,
                                 weight_decay=args.weight_decay)
 
-    criterion = nn.BCEWithLogitsLoss()
+    crack_weight = calc_crack_pixel_weight(DIR_MASK)
+    print(f'positive weight: {crack_weight}')
+    criterion = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([crack_weight]).to('cuda'))
 
     channel_means = [0.485, 0.456, 0.406]
     channel_stds  = [0.229, 0.224, 0.225]
@@ -167,7 +193,7 @@ if __name__ == '__main__':
     train_dataset, valid_dataset = random_split(dataset, [train_size, valid_size])
 
     train_loader = DataLoader(train_dataset, args.batch_size, shuffle=False, pin_memory=torch.cuda.is_available(), num_workers=args.num_workers)
-    valid_loader = DataLoader(train_dataset, args.batch_size, shuffle=False, pin_memory=torch.cuda.is_available(), num_workers=args.num_workers)
+    valid_loader = DataLoader(valid_dataset, args.batch_size, shuffle=False, pin_memory=torch.cuda.is_available(), num_workers=args.num_workers)
 
     model.cuda()
 

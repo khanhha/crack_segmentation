@@ -219,6 +219,29 @@ def copy_noncrack(in_dir, out_dir_img, out_dir_mask, id):
 
     print(f'copied {cnt} image-mask pairs from {id}')
 
+def copy_Volker(in_dir, out_dir_img, out_dir_mask, id):
+    img_dir = os.path.join(*[in_dir, id, 'images'])
+    mask_dir = os.path.join(*[in_dir, id, 'masks'])
+
+    mask_paths = dict([(path.stem, path )for path in Path(mask_dir).glob('*.*')])
+    for img_path in Path(img_dir).glob('*.*'):
+        if img_path.stem not in mask_paths:
+            continue
+
+        img = cv.imread(str(img_path))
+        coords_data = io.loadmat(str(mask_paths[img_path.stem]))
+        coords_lists = coords_data['Data']['Path'][0,0][0]
+        mask = np.zeros(img.shape[:2], dtype=np.float)
+        for coords in coords_lists:
+            for i in range(coords.shape[0]):
+                co = coords[i,:].astype(np.int)
+                mask[co[1]-2, co[0]-2] = 1.0
+
+        plt.imshow(img)
+        plt.imshow(mask, alpha=0.5)
+        plt.show()
+
+
 def rm_files(dir, pattern = '*.*'):
     for path in Path(dir).glob(pattern):
         os.remove(str(path))
@@ -245,6 +268,8 @@ if __name__ == '__main__':
     rm_files(mask_dir)
 
 
+    id_6 = 'volker'
+    copy_Volker(args.in_dir, out_dir_img=img_dir, out_dir_mask=mask_dir, id=id_6)
     id_0 = 'forest'
     copy_forest(args.in_dir, args.out_dir, id=id_0)
     id_1 = 'cracktree200'
@@ -282,3 +307,4 @@ if __name__ == '__main__':
     copy_files(mask_dir, join(*[args.out_dir, 'train', 'masks']), train_names)
     copy_files(img_dir, join(*[args.out_dir,  'test', 'images']), test_names)
     copy_files(mask_dir, join(*[args.out_dir, 'test', 'masks']), test_names)
+

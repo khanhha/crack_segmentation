@@ -4,6 +4,8 @@ import torch
 from torchvision import models
 import torchvision
 
+input_size = (448, 448)
+
 class Interpolate(nn.Module):
     def __init__(self, size=None, scale_factor=None, mode='nearest', align_corners=False):
         super(Interpolate, self).__init__()
