@@ -5,9 +5,6 @@ there're also around 500 images labeled by me.
 
 ![sample result](./assets/intro.png)
 
-#sample result
-
-
 # how to insall library
 conda create --name crack
 conda install -c fastai fastai 
