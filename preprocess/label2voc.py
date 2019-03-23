@@ -17,6 +17,48 @@ import json
 import os
 import labelme
 from labelme import utils
+import cv2 as cv
+from PIL import Image, ImageOps, ImageEnhance
+from torchvision.transforms import RandomSizedCrop
+from torchvision.transforms.functional import resized_crop, crop, resize
+from tqdm import tqdm
+
+def random_crop(img, mask, size, scale=(0.2, 0.8), ratio=(3. / 4., 4. / 3.), n_tries = 10, crack_px_percent = 0.3, resize=False):
+    n_total_crack = np.sum((mask > 0)[:])
+
+    img = Image.fromarray(img)
+    mask = Image.fromarray(mask)
+
+    results = []
+
+    img_w = img.size[0]
+    img_h = img.size[1]
+
+    for i in range(n_tries):
+        i, j, h, w = RandomSizedCrop.get_params(img, scale, ratio)
+        sub_img  = resized_crop(img, i, j, h, w, size, Image.BILINEAR)
+        sub_mask = resized_crop(mask,i, j, h, w, size, Image.NEAREST)
+        sub_img = np.asarray(sub_img)
+        sub_mask = np.asarray(sub_mask)
+
+        tmp = np.asarray(img.crop((j, i, j + w, i + h)))
+        n_crack_pixels = np.sum((tmp>0)[:])
+
+        crk_ratio = float(n_crack_pixels)/n_total_crack
+        if crk_ratio < crack_px_percent:
+            print('missing')
+            continue
+
+        results.append((sub_img, sub_mask, (i, j, h, w)))
+
+    _img  = np.asarray(resized_crop(img, 0, 0, img_h, img_w, size, Image.BILINEAR))
+    _mask = np.asarray(resized_crop(mask, 0, 0, img_h, img_w, size, Image.NEAREST))
+    _img  = np.asarray(_img)
+    _mask = np.asarray(_mask)
+
+    results.append((_img, _mask, (0, 0, img_h, img_w)))
+
+    return results
 
 def main():
     parser = argparse.ArgumentParser(
@@ -32,9 +74,9 @@ def main():
     #     sys.exit(1)
 
     os.makedirs(args.output_dir, exist_ok=True)
-    os.makedirs(osp.join(args.output_dir, 'JPEGImages'), exist_ok=True)
-    os.makedirs(osp.join(args.output_dir, 'SegmentationClass'), exist_ok=True)
-    os.makedirs(osp.join(args.output_dir, 'SegmentationClassPNG'), exist_ok=True)
+    os.makedirs(osp.join(args.output_dir, 'images'), exist_ok=True)
+    os.makedirs(osp.join(args.output_dir, 'masks'), exist_ok=True)
+    #os.makedirs(osp.join(args.output_dir, 'SegmentationClassPNG'), exist_ok=True)
     os.makedirs(osp.join(args.output_dir, 'SegmentationClassVisualization'), exist_ok=True)
     print('Creating dataset:', args.output_dir)
 
@@ -59,19 +101,19 @@ def main():
 
     colormap = labelme.utils.label_colormap(255)
 
-    for label_file in glob.glob(osp.join(args.input_dir, '*.json')):
-        # if '9S6A2822' not in label_file:
-        #      continue
+    for label_file in tqdm(list([path for path in glob.glob(osp.join(args.input_dir, '*.json'))])):
+        #if '9S6A2822' not in label_file:
+        #     continue
 
-        print('Generating dataset from:', label_file)
+        #print('Generating dataset from:', label_file)
         with open(label_file) as f:
             base = osp.splitext(osp.basename(label_file))[0]
             out_img_file = osp.join(
-                args.output_dir, 'JPEGImages', base + '.jpg')
+                args.output_dir, 'images', base + '.jpg')
             out_lbl_file = osp.join(
                 args.output_dir, 'SegmentationClass', base + '.npy')
             out_png_file = osp.join(
-                args.output_dir, 'SegmentationClassPNG', base + '.png')
+                args.output_dir, 'masks', base + '.jpg')
             out_viz_file = osp.join(
                 args.output_dir,
                 'SegmentationClassVisualization',
@@ -99,20 +141,34 @@ def main():
                     label_value = len(label_name_to_value)
                     label_name_to_value[label_name] = label_value
             lbl = utils.shapes_to_label(img.shape, data['shapes'], label_name_to_value)
-            ##
 
-            labelme.utils.lblsave(out_png_file, lbl)
+            #lb = cv.imread(join(*[args.label_dir, f'{path.stem}.png']))
+            #lb = cv.cvtColor(lb, cv.COLOR_BGR2GRAY)
+            lbl = (lbl > 0).astype(np.uint8) * 255
+            lbl = cv.morphologyEx(src=lbl, op=cv.MORPH_DILATE, kernel=cv.getStructuringElement(cv.MORPH_RECT, (20, 20)))
 
-            plt.clf()
-            plt.imshow(img)
-            plt.imshow(lbl, alpha=0.4)
-            plt.savefig(out_viz_file)
+            results = random_crop(img, lbl, size=(448, 448), n_tries=10)
+            #tq.update(1)
+            for sub_img, sub_mask, crop_info in results:
+                info = f'{crop_info[0]}_{crop_info[1]}_{crop_info[2]}_{crop_info[3]}'
+                cv.imwrite(filename=os.path.join(*[args.output_dir, 'images', f'{base}_{info}.jpg']), img=sub_img)
+                cv.imwrite(filename=os.path.join(*[args.output_dir, 'masks',  f'{base}_{info}.jpg']), img=sub_mask)
+                #cnt += 1
+                plt.clf()
+                plt.imshow(sub_img)
+                plt.imshow(sub_mask, alpha=0.4)
+                plt.savefig(osp.join(args.output_dir, 'SegmentationClassVisualization', f'{base}_{info}' + '.jpg',))
+
+            #labelme.utils.lblsave(out_png_file, lbl)
+            #np.save(out_lbl_file, lbl)
+            #PIL.Image.fromarray(img).save(out_img_file)
+
+
             #plt.show()
 
             # viz = labelme.utils.draw_label(
             #     lbl, img, class_names, colormap=colormap)
             # PIL.Image.fromarray(viz).save(out_viz_file)
-
 
 if __name__ == '__main__':
     main()
