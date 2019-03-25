@@ -1,22 +1,36 @@
 # crack_segmentation
-this repository contains code and dataset for my experiment in crack segmentation using the UNet archiecture
-the dataset is merged from 5 different crack datasets which contain images with corresponding masks.
-there're also around 500 images labeled by me. 
+This repository contains code and dataset for the task crack segmentation using two architectures UNet_VGG16, UNet_Resnet and DenseNet-Tiramusu
+
+# segmentation dataset
+From my knowledge, the dataset used in the project is the largest crack segmentation dataset so far. 
+It contains around 11.200 images which are merged from 12 available crack segmentation dataset.
+The name prefix of each image is assigned to the corresponding dataset that the image belong to. 
+There're also images which contain no crack, which could be filtered out by the pattern "noncrack*"
+All the images in the dataset are resized to the size of (448, 448).
+
+the two folders images and masks contain all the images
+the two folders train and test contain training and testing images splitted from the two above folder. 
+the splitting is stratified so that the proportion of each dataset in the train and test folder are similar
+
+If you want access to the original datasets before they are merged, please contact me through email: khanhhh89@gmail.com
 
 ![sample result](./assets/intro.png)
 
-# how to insall library
+# How to insall library
 conda create --name crack
 conda install -c fastai fastai 
 conda install -c conda-forge opencv 
 
-# how to evaluate the result
-python evaluate.py  -in_dir PATH_TO_IMAGE_FOLDER model_path PATH_TO_THE_MODEL -out_dir PATH_TO_OUTPUT_DIRECTORY
+# how to evaluate the model
+- download the pre-trained model unet_vgg16 or unet_resnet_101.
+- put the downloaded model under the folder ./models
+- run the code
+python evaluate_unet.py  -in_dir PATH_TO_IMAGE_FOLDER model_path PATH_TO_THE_MODEL -out_dir PATH_TO_OUTPUT_DIRECTORY
 
-#how to train the model
+# how to train the model
 step 1. download the merged dataset from the link
 step 2. run the training code
-python train.py -data_dir PATH_TO_THE_DATASET_FOLDER -model_path PATH_TO_OUTPUT_MODEL
+python train.py -data_dir PATH_TO_THE_DATASET_FOLDER -model_dir PATH_TO_MODEL_DIRECTORY -model_type
 
 # Note: please cite the corresponding papers when using these datasets.
 
