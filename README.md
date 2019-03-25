@@ -32,19 +32,25 @@ To evaluate the robustness of the crack model in different contexts, I tried to 
 there could be the following situation
 
 - pure crack: these are  ideal cases where only crack are in the images.
+
 ![](./assets/pure_crack.jpg)
 
 - like crack: pictures of this type contains details that look like crack 
+
 ![](./assets/like_crack.jpg)
 
 - crack with moss: there're moss on crack. These cases occur a lot in practice.
+
 ![](./assets/crack_with_moss.jpg)
 
 - crack with noise: the background (wall, concrete) are lumpy  
+
 ![](./assets/crack_noise.jpg)
 
 - crack in large context: the context is large and diverse. For example, the whole house or street with people
+
 ![](./assets/crack_in_large_context.jpeg)
+
 I am very welcome to further idea from you. please drop me an email at khanhhh89@gmail.com if you think of other cases
 
 # how to train the model
