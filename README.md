@@ -25,12 +25,12 @@ conda install -c conda-forge opencv
 - download the pre-trained model unet_vgg16 or unet_resnet_101.
 - put the downloaded model under the folder ./models
 - run the code
-python evaluate_unet.py  -in_dir PATH_TO_IMAGE_FOLDER model_path PATH_TO_THE_MODEL -out_dir PATH_TO_OUTPUT_DIRECTORY
+python evaluate_unet.py  -in_dir ./test_images model_path ./model_resnet_101.pt -out_dir ./test_result
 
 # how to train the model
-step 1. download the merged dataset from the link
+step 1. download the dataset from the link
 step 2. run the training code
-python train.py -data_dir PATH_TO_THE_DATASET_FOLDER -model_dir PATH_TO_MODEL_DIRECTORY -model_type
+python train.py -data_dir PATH_TO_THE_DATASET_FOLDER -model_dir PATH_TO_MODEL_DIRECTORY -model_type resnet_101
 
 # Note: please cite the corresponding papers when using these datasets.
 
