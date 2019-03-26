@@ -16,17 +16,24 @@ If you want access to the original datasets before they are merged, please conta
 
 ![sample result](./assets/intro.png)
 
+***
 # How to insall library
+```python
 conda create --name crack
 conda install -c fastai fastai 
 conda install -c conda-forge opencv 
+```
 
+***
 # how to evaluate the model on the test images
 - download the pre-trained model unet_vgg16 or unet_resnet_101.
 - put the downloaded model under the folder ./models
 - run the code
+```pythonstub
 python evaluate_unet.py  -in_dir ./test_images model_path ./model_resnet_101.pt -out_dir ./test_result
+```
 
+***
 # how are the test images collected?
 To evaluate the robustness of the crack model in different contexts, I tried to think of several noisy condition that could happen in practice to test the model
 there could be the following situation
@@ -54,9 +61,14 @@ there could be the following situation
 I am very welcome to further idea from you. please drop me an email at khanhhh89@gmail.com if you think of other cases
 
 # how to train the model
-step 1. download the dataset from the link
-step 2. run the training code
+- step 1. download the dataset from [the link](https://drive.google.com/open?id=1xrOqv0-3uMHjZyEUrerOYiYXW_E8SUMP)
+- step 2. run the training code
+- step 3: 
+```python 
 python train.py -data_dir PATH_TO_THE_DATASET_FOLDER -model_dir PATH_TO_MODEL_DIRECTORY -model_type resnet_101
+```
+
+***
 
 # Note: please cite the corresponding papers when using these datasets.
 
