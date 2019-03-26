@@ -6,8 +6,19 @@ My approach is based on the UNet network with transfer learning on the two popul
 The result shows that a large crack segmentation dataset helps improve the performance of the model in diverse cases that 
 could happen in practice.
 
-# prediction result preview
-Below are the results from several test cases. For more test case results, please download from [this link]()
+# Contents
+ - [Inference Result Preview](#Inference Result Preview)
+ - [Overview](#Overview)
+ - [Dataset](#Dataset)
+ - [Dependencies](#Dependencies)
+ - [Test Images Collection](#Test Images Collection)
+ - [Inference](#Inference)
+ - [Training](#Training)
+ - [Result](#Result)
+ - [Citation](#Citation)
+
+# Inference result preview
+Below are the results from several test cases. For more test case results, please see images under the folder ./test_results
 
 ![](./assets/show_result_2.jpg)
 
@@ -26,7 +37,7 @@ In this project, I tried to label over 300 high-resolution images from the crack
 segmentation crack datasets available on the Internet. The result show that the model could be able to distinguish crack from tree, title lines
 and other different noise in reality.
 
-# segmentation dataset
+# Dataset
 From my knowledge, the dataset used in the project is the largest crack segmentation dataset so far. 
 It contains around 11.200 images which are merged from 12 available crack segmentation dataset.
 The name prefix of each image is assigned to the corresponding dataset that the image belong to. 
@@ -40,15 +51,16 @@ the splitting is stratified so that the proportion of each dataset in the train 
 If you want access to the original datasets before they are merged, please contact me through email: khanhhh89@gmail.com
 
 ***
-# How to insall library
+# Dependencies
 ```python
 conda create --name crack
 conda install -c fastai fastai 
 conda install -c conda-forge opencv 
+conda install tqdm
 ```
 
 ***
-# how to evaluate the model on the test images
+# Inference
 - download the pre-trained model unet_vgg16 or unet_resnet_101.
 - put the downloaded model under the folder ./models
 - run the code
@@ -57,7 +69,7 @@ python inference_unet.py  -in_dir ./test_images -model_path ./models/model_unet_
 ```
 
 ***
-# how are the test images classified?
+# Test Images Collection
 The model works quite well in situations where there are just almost crack pixels and the concrete background in the images. 
 However, it's often not the case in reality, where lots of different objects could simultenously show up in an image. 
 Therefore, to evaluate the robustness of the crack model, I tried to come up with several cases that could happen in practice. 
@@ -85,7 +97,7 @@ These images could be found in the folder ./test_imgs in the same repository
 
 I am very welcome to further idea from you. please drop me an email at khanhhh89@gmail.com if you think of other cases
 
-# how to train the model
+# Training
 - step 1. download the dataset from [the link](https://drive.google.com/open?id=1xrOqv0-3uMHjZyEUrerOYiYXW_E8SUMP)
 - step 2. run the training code
 - step 3: 
@@ -93,9 +105,19 @@ I am very welcome to further idea from you. please drop me an email at khanhhh89
 python train.py -data_dir PATH_TO_THE_DATASET_FOLDER -model_dir PATH_TO_MODEL_DIRECTORY -model_type resnet_101
 ```
 
+# Result
+The best result is achieved by UNet_Resnet_101 with IoU = and Dice = 
+
+| Model            | IOU, % | Dice, % |  
+|------------------|--------|---------|
+| UNet_VGG16       | 75.44  | 78.32   | 
+| UNet_Resnet_101 | 75.44  | 78.32   | 
+| DenseNet         | ?      | ?       |
+
 ***
 
-# Note: please cite the corresponding papers when using these datasets.
+# Citation
+Note: please cite the corresponding papers when using these datasets.
 
 CRACK500:
 >@inproceedings{zhang2016road,
