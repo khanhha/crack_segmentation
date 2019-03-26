@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from unet.unet_transfer import UNet16
+from unet.unet_transfer import UNet16, UNetResNet
 from pathlib import Path
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, Dataset, random_split
@@ -34,9 +34,13 @@ class AverageMeter(object):
 def create_model(device, type ='vgg16'):
     assert type == 'vgg16' or type == 'resnet101'
     if type == 'vgg16':
+        print('create vgg16 model')
         model = UNet16(pretrained=True)
     elif type == 'resnet101':
-        model = UNet16(pretrained=True)
+        encoder_depth = 101
+        num_classes = 1
+        print('create resnet101 model')
+        model = UNetResNet(encoder_depth=encoder_depth, num_classes=num_classes, pretrained=True)
     else:
         assert False
     model.eval()

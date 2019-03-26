@@ -39,14 +39,16 @@ and other different noise in reality.
 
 # Dataset
 From my knowledge, the dataset used in the project is the largest crack segmentation dataset so far. 
-It contains around 11.200 images which are merged from 12 available crack segmentation dataset.
-The name prefix of each image is assigned to the corresponding dataset that the image belong to. 
-There're also images which contain no crack, which could be filtered out by the pattern "noncrack*"
-All the images in the dataset are resized to the size of (448, 448).
+It contains around 11.200 images that are merged from 12 available crack segmentation datasets.
 
-the two folders images and masks contain all the images
-the two folders train and test contain training and testing images splitted from the two above folder. 
-the splitting is stratified so that the proportion of each dataset in the train and test folder are similar
+The name prefix of each image is assigned to the corresponding dataset name that the image belong to. 
+There're also images with no crack pixel, which could be filtered out by the file name pattern "noncrack*"
+
+All the images are resized to the size of (448, 448).
+
+The two folders images and masks contain all the images.
+The two folders train and test contain training and testing images splitted from the two above folder. 
+The splitting is stratified so that the proportion of each dataset in the train and test folder are similar
 
 If you want access to the original datasets before they are merged, please contact me through email: khanhhh89@gmail.com
 
@@ -54,14 +56,15 @@ If you want access to the original datasets before they are merged, please conta
 # Dependencies
 ```python
 conda create --name crack
-conda install -c fastai fastai 
+conda install -c anaconda pytorch-gpu 
 conda install -c conda-forge opencv 
-conda install tqdm
+conda install matplotlib scipy numpy tqdm pillow
 ```
 
 ***
 # Inference
-- download the pre-trained model unet_vgg16 or unet_resnet_101.
+- download the pre-trained model [unet_vgg16](https://drive.google.com/open?id=1wA2eAsyFZArG3Zc9OaKvnBuxSAPyDl08) or 
+[unet_resnet_101]().
 - put the downloaded model under the folder ./models
 - run the code
 ```pythonstub
@@ -96,7 +99,7 @@ I am very welcome to further idea from you. please drop me an email at khanhhh89
 - step 2. run the training code
 - step 3: 
 ```python 
-python train.py -data_dir PATH_TO_THE_DATASET_FOLDER -model_dir PATH_TO_MODEL_DIRECTORY -model_type resnet_101
+python train_unet.py -data_dir PATH_TO_THE_DATASET_FOLDER -model_dir PATH_TO_MODEL_DIRECTORY -model_type resnet_101
 ```
 
 # Result
@@ -104,9 +107,9 @@ The best result is achieved by UNet_Resnet_101 with IoU = and Dice =
 
 | Model            | IOU, % | Dice, % |  
 |------------------|--------|---------|
-| UNet_VGG16       | 75.44  | 78.32   | 
-| UNet_Resnet_101 | 75.44  | 78.32   | 
-| DenseNet         | ?      | ?       |
+| UNet_VGG16       | 72.44  | 70.32   | 
+| UNet_Resnet_101 |  75.44  | 78.32   | 
+| DenseNet         |       |        |
 
 ***
 

@@ -7,6 +7,8 @@ import numpy as np
 
 import torch
 import tqdm
+from unet.unet_transfer import UNet16, UNetResNet
+
 
 class AverageMeter(object):
     def __init__(self):
@@ -43,6 +45,47 @@ def check_crop_size(image_height, image_width):
         True if both height and width divisible by 32 and False otherwise.
     """
     return image_height % 32 == 0 and image_width % 32 == 0
+
+def create_model(device, type ='vgg16'):
+    assert type == 'vgg16' or type == 'resnet101'
+    if type == 'vgg16':
+        model = UNet16(pretrained=True)
+    elif type == 'resnet101':
+        model = UNetResNet(pretrained=True, encoder_depth=101, num_classes=1)
+    else:
+        assert False
+    model.eval()
+    return model.to(device)
+
+def load_unet_vgg16(model_path):
+    model = UNet16(pretrained=True)
+    checkpoint = torch.load(model_path)
+    if 'model' in checkpoint:
+        model.load_state_dict(checkpoint['model'])
+    elif 'state_dict' in checkpoint:
+        model.load_state_dict(checkpoint['check_point'])
+    else:
+        raise Exception('undefind model format')
+
+    model.cuda()
+    model.eval()
+
+    return model
+
+def load_unet_resnet_101(model_path):
+    model = UNetResNet(pretrained=True, encoder_depth=101, num_classes=1)
+    checkpoint = torch.load(model_path)
+    if 'model' in checkpoint:
+        model.load_state_dict(checkpoint['model'])
+    elif 'state_dict' in checkpoint:
+        model.load_state_dict(checkpoint['check_point'])
+    else:
+        raise Exception('undefind model format')
+
+    model.cuda()
+    model.eval()
+
+    return model
 
 
 def train(args, model, criterion, train_loader, valid_loader, validation, init_optimizer, n_epochs=None, fold=None,
