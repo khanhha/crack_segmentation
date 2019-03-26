@@ -14,6 +14,7 @@ from os.path import join
 from PIL import Image
 import gc
 from utils import load_unet_vgg16, load_unet_resnet_101
+from tqdm import tqdm
 
 def evaluate_img(model, img):
     input_width, input_height = input_size[0], input_size[1]
@@ -81,31 +82,34 @@ if __name__ == '__main__':
     parser.add_argument('-img_dir',type=str, help='input dataset directory')
     parser.add_argument('-model_path', type=str, help='trained model path')
     parser.add_argument('-out_viz_dir', type=str, default='', required=False, help='visualization output dir')
-    parser.add_argument('-out_pred_dir', type=str, help='prediction output dir')
+    parser.add_argument('-out_pred_dir', type=str, default='', required=False,  help='prediction output dir')
     parser.add_argument('-threshold', type=float, default=0.15, help='threshold to cut off crack response')
-    parser.add_argument('-model_type', type=str, help='model type: vgg15 or resnet101')
     args = parser.parse_args()
 
-    os.makedirs(args.out_viz_dir, exist_ok=True)
-    os.makedirs(args.out_pred_dir, exist_ok=True)
-    for path in Path(args.out_viz_dir).glob('*.*'):
-        os.remove(str(path))
-    for path in Path(args.out_pred_dir).glob('*.*'):
-        os.remove(str(path))
+    if args.out_viz_dir != '':
+        os.makedirs(args.out_viz_dir, exist_ok=True)
+        for path in Path(args.out_viz_dir).glob('*.*'):
+            os.remove(str(path))
 
-    if args.model_type == 'vgg16':
+    if args.out_pred_dir != '':
+        os.makedirs(args.out_pred_dir, exist_ok=True)
+        for path in Path(args.out_pred_dir).glob('*.*'):
+            os.remove(str(path))
+
+    if 'vgg_16' in args.model_path:
         model = load_unet_vgg16(args.model_path)
-    elif args.model_type == 'resnet101':
+    elif 'resnet_101' in args.model_path:
         model = load_unet_resnet_101(args.model_path)
     else:
-        print('undefind model type')
+        print('undefind model name pattern')
         exit()
 
     channel_means = [0.485, 0.456, 0.406]
     channel_stds  = [0.229, 0.224, 0.225]
 
-    for path in Path(args.img_dir).glob('*.*'):
-        print(str(path))
+    paths = [path for path in Path(args.img_dir).glob('*.*')]
+    for path in tqdm(paths):
+        #print(str(path))
 
         train_tfms = transforms.Compose([transforms.ToTensor(), transforms.Normalize(channel_means, channel_stds)])
 
@@ -118,7 +122,8 @@ if __name__ == '__main__':
 
         prob_map_full = evaluate_img(model, img_0)
 
-        cv.imwrite(filename=join(args.out_pred_dir, f'{path.stem}.jpg'), img=(prob_map_full * 255).astype(np.uint8))
+        if args.out_pred_dir != '':
+            cv.imwrite(filename=join(args.out_pred_dir, f'{path.stem}.jpg'), img=(prob_map_full * 255).astype(np.uint8))
 
         if args.out_viz_dir != '':
 

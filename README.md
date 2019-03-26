@@ -105,10 +105,10 @@ python train_unet.py -data_dir PATH_TO_THE_DATASET_FOLDER -model_dir PATH_TO_MOD
 # Result
 The best result is achieved by UNet_Resnet_101 with IoU = and Dice = 
 
-| Model            | IOU, % | Dice, % |  
-|------------------|--------|---------|
-| UNet_VGG16       | 72.44  | 70.32   | 
-| UNet_Resnet_101 |  75.44  | 78.32   | 
+| Model            | IOU | Dice |  
+|------------------|---------|---------|
+| UNet_VGG16       | mean = 0.4687, std =0.2217  | mean = 0.6033, std = 0.2382| 
+| UNet_Resnet_101 |  ?  | ? | 
 | DenseNet         |       |        |
 
 ***

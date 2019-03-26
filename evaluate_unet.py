@@ -3,6 +3,7 @@ import argparse
 import cv2
 import numpy as np
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 def dice(y_true, y_pred):
     return (2 * (y_true * y_pred).sum() + 1e-15) / (y_true.sum() + y_pred.sum() + 1e-15)
@@ -41,7 +42,8 @@ if __name__ == '__main__':
     result_dice = []
     result_jaccard = []
 
-    for i, file_name in tqdm(enumerate(Path(args.ground_truth_dir).glob('*'))):
+    paths = [path for path in  Path(args.ground_truth_dir).glob('*')]
+    for file_name in tqdm(paths):
         y_true = (cv2.imread(str(file_name), 0) > 0).astype(np.uint8)
 
         pred_file_name = Path(args.pred_dir) / file_name.name
@@ -49,8 +51,18 @@ if __name__ == '__main__':
             print(f'missing prediction for file {file_name.name}')
             continue
 
-        pred_image = (cv2.imread(str(pred_file_name), 0) > 255 * 0.5).astype(np.uint8)
+        pred_image = (cv2.imread(str(pred_file_name), 0) > 255 * args.threshold).astype(np.uint8)
         y_pred = pred_image
+
+        # print(y_true.max(), y_true.min())
+        # plt.subplot(131)
+        # plt.imshow(y_true)
+        # plt.subplot(132)
+        # plt.imshow(y_pred)
+        # plt.subplot(133)
+        # plt.imshow(y_true)
+        # plt.imshow(y_pred, alpha=0.5)
+        # plt.show()
 
         result_dice += [dice(y_true, y_pred)]
         result_jaccard += [jaccard(y_true, y_pred)]
