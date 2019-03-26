@@ -3,12 +3,11 @@ This repository contains code and dataset for the task crack segmentation using 
 
 # prediction result preview
 Below are the results from several test cases. For more test case results, please download from [this link]()
-![](./assets/show_result_1.jpg)
-___
+
 ![](./assets/show_result_2.jpg)
-___
+
 ![](./assets/show_result_3.jpg)
-___
+
 ![](./assets/show_result_4.jpg)
 
 # segmentation dataset
