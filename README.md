@@ -7,11 +7,11 @@ The result shows that a large crack segmentation dataset helps improve the perfo
 could happen in practice.
 
 # Contents
- - [Inference Result Preview](#Inference Result Preview)
+ - [Inference Result Preview](#Inference-Result-Preview)
  - [Overview](#Overview)
  - [Dataset](#Dataset)
  - [Dependencies](#Dependencies)
- - [Test Images Collection](#Test Images Collection)
+ - [Test Images Collection](#Test-Images-Collection)
  - [Inference](#Inference)
  - [Training](#Training)
  - [Result](#Result)
