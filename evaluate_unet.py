@@ -29,7 +29,7 @@ def load_unet_vgg16(model_path):
 
     return model
 
-def evaluate_img(model, img):
+def evaluate_img(model, img, threshold):
     input_width, input_height = input_size[0], input_size[1]
 
     img_1 = cv.resize(img, (input_width, input_height), cv.INTER_AREA)
@@ -40,16 +40,16 @@ def evaluate_img(model, img):
 
     mask = F.sigmoid(mask[0, 0]).data.cpu().numpy()
     mask = cv.resize(mask, (img_width, img_height), cv.INTER_AREA)
-
+    mask[mask < threshold] = 0.0
     return mask
 
-def evaluate_img_patch(model, img):
+def evaluate_img_patch(model, img, threshold):
     input_width, input_height = input_size[0], input_size[1]
 
     img_height, img_width, img_channels = img.shape
 
     if img_width < input_width or img_height < input_height:
-        return evaluate_img(model, img)
+        return evaluate_img(model, img, threshold)
 
     stride_ratio = 0.2
     stride = int(input_width * stride_ratio)
@@ -82,6 +82,7 @@ def evaluate_img_patch(model, img):
         coords = patch_locs[i]
         probability_map[coords[1]:coords[1] + input_height, coords[0]:coords[0] + input_width] += response
 
+    probability_map[probability_map<threshold] = 0.0
     return probability_map
 
 def disable_axis():
@@ -96,6 +97,7 @@ if __name__ == '__main__':
     parser.add_argument('-img_dir',type=str, help='input dataset directory')
     parser.add_argument('-model_path', type=str, help='trained model path')
     parser.add_argument('-out_dir', type=str, help='trained model path')
+    parser.add_argument('-threshold', type=float, default=0.3, help='trained model path')
     args = parser.parse_args()
 
     os.makedirs(args.out_dir, exist_ok=True)
@@ -108,9 +110,6 @@ if __name__ == '__main__':
     channel_stds  = [0.229, 0.224, 0.225]
 
     for path in Path(args.img_dir).glob('*.*'):
-        # if '01-01-01' not in path.stem:
-        #       continue
-
         print(str(path))
 
         train_tfms = transforms.Compose([transforms.ToTensor(), transforms.Normalize(channel_means, channel_stds)])
@@ -119,7 +118,7 @@ if __name__ == '__main__':
         img_0 = np.asarray(img_0)
         img_height, img_width, img_channels = img_0.shape
 
-        prob_map = evaluate_img_patch(model, img_0)
+        prob_map = evaluate_img_patch(model, img_0, args.threshold)
 
         plt.clf()
         plt.subplot(231); disable_axis()
@@ -128,9 +127,9 @@ if __name__ == '__main__':
         plt.imshow(prob_map)
         plt.subplot(233); disable_axis()
         plt.imshow(img_0)
-        plt.imshow(prob_map, alpha=0.5)
+        plt.imshow(prob_map, alpha=0.4)
 
-        mask = evaluate_img(model, img_0)
+        mask = evaluate_img(model, img_0, args.threshold)
 
         plt.subplot(234); disable_axis()
         plt.imshow(img_0)
@@ -138,8 +137,9 @@ if __name__ == '__main__':
         plt.imshow(mask)
         plt.subplot(236); disable_axis()
         plt.imshow(img_0)
-        plt.imshow(mask, alpha=0.5)
-        #plt.show()
+        plt.imshow(mask, alpha=0.4)
+
+        plt.title(f'{path.stem}. cut-off threshold = {args.threshold}')
 
         plt.savefig(join(args.out_dir, f'{path.stem}.jpg'), dpi=500)
 
