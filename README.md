@@ -107,8 +107,8 @@ The best result is achieved by UNet_Resnet_101 with IoU = and Dice =
 
 | Model            | IOU | Dice |  
 |------------------|---------|---------|
-| UNet_VGG16       | mean = 0.4687, std =0.2217  | mean = 0.6033, std = 0.2382| 
-| UNet_Resnet_101 |  ?  | ? | 
+| UNet_VGG16       | mean = 0.4687, std = 0.2217  | mean = 0.6033, std = 0.2382| 
+| UNet_Resnet_101 | mean = 0.3861, 0.2123  | mean = 0.51877, std = 0.2538  | 
 | DenseNet         |       |        |
 
 ***
