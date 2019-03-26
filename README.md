@@ -1,5 +1,10 @@
-# crack_segmentation
-This repository contains code and dataset for the task crack segmentation using two architectures UNet_VGG16, UNet_Resnet and DenseNet-Tiramusu
+# Crack Segmentation
+===
+Here I present my solution to the problem crack segmentation for both pavement and concrete meterials. 
+In this article, I describe the approaches, dataset that I exprimented with and desmonstrate the result. 
+My approach is based on the UNet network with transfer learning on the two popular architectures: VGG16 and Resnet101.
+The result shows that a large crack segmentation dataset helps improve the performance of the model in diverse cases that 
+could happen in practice.
 
 # prediction result preview
 Below are the results from several test cases. For more test case results, please download from [this link]()
@@ -9,6 +14,17 @@ Below are the results from several test cases. For more test case results, pleas
 ![](./assets/show_result_3.jpg)
 
 ![](./assets/show_result_4.jpg)
+
+# Overview
+Crack segmentation is an important task in structure investigation problems. 
+For example, in the bridge investigation project, a done is controlled to fly around bridges to take pictures
+of different bridge surfaces. The pictures will be then processed by computer to detect potential regions on the bridge surface
+that might be damaged. The more accurate the model is, the less human effort we need to process these images. Otherwise,
+the operators will have to check every single image, which is boring and error-prone. 
+One challenge in this task is that the model is sentisive to noise and other objects such as moss on crack, title lines, etc. 
+In this project, I tried to label over 300 high-resolution images from the crack dataset at my university and merged over 9 different
+segmentation crack datasets available on the Internet. The result show that the model could be able to distinguish crack from tree, title lines
+and other different noise in reality.
 
 # segmentation dataset
 From my knowledge, the dataset used in the project is the largest crack segmentation dataset so far. 
@@ -41,9 +57,9 @@ python evaluate_unet.py  -in_dir ./test_images model_path ./model_resnet_101.pt 
 ```
 
 ***
-# how are the test images collected?
-Acutually, the model work quite well in situations where there are just almost crack pixels and the concrete background in the images. 
-It's often not the case in reality, when lots of different objects could simultenously show up in an image. 
+# how are the test images classified?
+The model works quite well in situations where there are just almost crack pixels and the concrete background in the images. 
+However, it's often not the case in reality, where lots of different objects could simultenously show up in an image. 
 Therefore, to evaluate the robustness of the crack model, I tried to come up with several cases that could happen in practice. 
 These images could be found in the folder ./test_imgs in the same repository 
 
