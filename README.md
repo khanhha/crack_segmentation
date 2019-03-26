@@ -1,5 +1,5 @@
 # Crack Segmentation
-===
+
 Here I present my solution to the problem crack segmentation for both pavement and concrete meterials. 
 In this article, I describe the approaches, dataset that I exprimented with and desmonstrate the result. 
 My approach is based on the UNet network with transfer learning on the two popular architectures: VGG16 and Resnet101.
@@ -76,24 +76,20 @@ Therefore, to evaluate the robustness of the crack model, I tried to come up wit
 These images could be found in the folder ./test_imgs in the same repository 
 
 - pure crack: these are ideal cases where only crack objects occur in the images.
-
-![](./assets/pure_crack.jpg)
-
 - like crack: pictures of this type contains details that look like crack 
-
-![](./assets/like_crack.jpg)
-
 - crack with moss: there is moss on crack. These cases occur a lot in reality.
-
-![](./assets/crack_with_moss.jpg)
-
 - crack with noise: the background (wall, concrete) are lumpy  
-
-![](./assets/crack_noise.jpg)
-
 - crack in large context: the context is large and diverse. For example, the whole house or street with people
 
-![](./assets/crack_in_large_context.jpeg)
+| | |   
+|------------------|--------|
+| pure crack | like crack |
+| ![pure crack](./assets/pure_crack.jpg) | ![](./assets/like_crack.jpg)|
+| crack with moss | lumpy surface|
+| ![](./assets/crack_with_moss.jpg) | ![](./assets/crack_noise.jpg)| 
+| crack in large context | no crack|
+| ![](./assets/crack_in_large_context.jpeg)| ![](./assets/noncrack.jpg)| 
+
 
 I am very welcome to further idea from you. please drop me an email at khanhhh89@gmail.com if you think of other cases
 
