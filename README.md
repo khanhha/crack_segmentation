@@ -23,7 +23,6 @@ the splitting is stratified so that the proportion of each dataset in the train 
 
 If you want access to the original datasets before they are merged, please contact me through email: khanhhh89@gmail.com
 
-
 ***
 # How to insall library
 ```python
@@ -43,10 +42,12 @@ python evaluate_unet.py  -in_dir ./test_images model_path ./model_resnet_101.pt 
 
 ***
 # how are the test images collected?
-To evaluate the robustness of the crack model in different contexts, I tried to think of several noisy condition that could happen in practice to test the model
-there could be the following situation
+Acutually, the model work quite well in situations where there are just almost crack pixels and the concrete background in the images. 
+It's often not the case in reality, when lots of different objects could simultenously show up in an image. 
+Therefore, to evaluate the robustness of the crack model, I tried to come up with several cases that could happen in practice. 
+These images could be found in the folder ./test_imgs in the same repository 
 
-- pure crack: these are  ideal cases where only crack are in the images.
+- pure crack: these are ideal cases where only crack objects occur in the images.
 
 ![](./assets/pure_crack.jpg)
 
@@ -54,7 +55,7 @@ there could be the following situation
 
 ![](./assets/like_crack.jpg)
 
-- crack with moss: there're moss on crack. These cases occur a lot in practice.
+- crack with moss: there is moss on crack. These cases occur a lot in reality.
 
 ![](./assets/crack_with_moss.jpg)
 
