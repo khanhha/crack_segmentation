@@ -53,7 +53,7 @@ conda install -c conda-forge opencv
 - put the downloaded model under the folder ./models
 - run the code
 ```pythonstub
-python evaluate_unet.py  -in_dir ./test_images model_path ./model_resnet_101.pt -out_dir ./test_result
+python inference_unet.py  -in_dir ./test_images -model_path ./models/model_unet_resnet_101_best.pt -out_dir ./test_result
 ```
 
 ***
