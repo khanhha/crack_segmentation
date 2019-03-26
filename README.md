@@ -1,6 +1,16 @@
 # crack_segmentation
 This repository contains code and dataset for the task crack segmentation using two architectures UNet_VGG16, UNet_Resnet and DenseNet-Tiramusu
 
+# prediction result preview
+Below are the results from several test cases. For more test case results, please download from [this link]()
+![](./assets/show_result_1.jpg)
+___
+![](./assets/show_result_2.jpg)
+___
+![](./assets/show_result_3.jpg)
+___
+![](./assets/show_result_4.jpg)
+
 # segmentation dataset
 From my knowledge, the dataset used in the project is the largest crack segmentation dataset so far. 
 It contains around 11.200 images which are merged from 12 available crack segmentation dataset.
@@ -14,7 +24,6 @@ the splitting is stratified so that the proportion of each dataset in the train 
 
 If you want access to the original datasets before they are merged, please contact me through email: khanhhh89@gmail.com
 
-![sample result](./assets/intro.png)
 
 ***
 # How to insall library
