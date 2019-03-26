@@ -81,14 +81,12 @@ These images could be found in the folder ./test_imgs in the same repository
 - crack with noise: the background (wall, concrete) are lumpy  
 - crack in large context: the context is large and diverse. For example, the whole house or street with people
 
-| | |   
-|------------------|--------|
-| pure crack | like crack |
-| ![pure crack](./assets/pure_crack.jpg) | ![](./assets/like_crack.jpg)|
-| crack with moss | lumpy surface|
-| ![](./assets/crack_with_moss.jpg) | ![](./assets/crack_noise.jpg)| 
-| crack in large context | no crack|
-| ![](./assets/crack_in_large_context.jpeg)| ![](./assets/noncrack.jpg)| 
+| | | |
+|------------------|--------|--------------|
+| pure crack | like crack | crack with moss |
+| ![pure crack](./assets/pure_crack.jpg) | ![](./assets/like_crack.jpg)| ![](./assets/crack_with_moss.jpg) |
+| no crack | lumpy surface| crack in large context |
+| ![](./assets/noncrack.jpg) | ![](./assets/crack_noise.jpg)| ![](./assets/crack_in_large_context.jpeg)| 
 
 
 I am very welcome to further idea from you. please drop me an email at khanhhh89@gmail.com if you think of other cases
