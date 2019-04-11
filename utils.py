@@ -87,6 +87,20 @@ def load_unet_resnet_101(model_path):
 
     return model
 
+def load_unet_resnet_34(model_path):
+    model = UNetResNet(pretrained=True, encoder_depth=34, num_classes=1)
+    checkpoint = torch.load(model_path)
+    if 'model' in checkpoint:
+        model.load_state_dict(checkpoint['model'])
+    elif 'state_dict' in checkpoint:
+        model.load_state_dict(checkpoint['check_point'])
+    else:
+        raise Exception('undefind model format')
+
+    model.cuda()
+    model.eval()
+
+    return model
 
 def train(args, model, criterion, train_loader, valid_loader, validation, init_optimizer, n_epochs=None, fold=None,
           num_classes=None):

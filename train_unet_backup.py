@@ -7,12 +7,14 @@ from torch.utils.data import DataLoader, Dataset, random_split
 import torch.nn.functional as F
 from torch.autograd import Variable
 import shutil
-from data_loader import ImgDataSet
+from data_loader import ImgDataSetJoint, ImgDataSet
 import os
 import argparse
 import tqdm
 import numpy as np
 import scipy.ndimage as ndimage
+import albumentations as albu
+from albumentations.pytorch import ToTensor
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
@@ -32,6 +34,7 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
 def create_model(device, type ='vgg16'):
+    assert type == 'vgg16' or type == 'resnet101'
     if type == 'vgg16':
         print('create vgg16 model')
         model = UNet16(pretrained=True)
@@ -39,11 +42,6 @@ def create_model(device, type ='vgg16'):
         encoder_depth = 101
         num_classes = 1
         print('create resnet101 model')
-        model = UNetResNet(encoder_depth=encoder_depth, num_classes=num_classes, pretrained=True)
-    elif type == 'resnet34':
-        encoder_depth = 34
-        num_classes = 1
-        print('create resnet34 model')
         model = UNetResNet(encoder_depth=encoder_depth, num_classes=num_classes, pretrained=True)
     else:
         assert False
@@ -74,7 +72,7 @@ def find_latest_model_path(dir):
     else:
         return None
 
-def train(train_loader, model, criterion, optimizer, validation, args):
+def train(train_loader, valid_loader, model, criterion, optimizer, validation, args):
 
     latest_model_path = find_latest_model_path(args.model_dir)
 
@@ -84,7 +82,6 @@ def train(train_loader, model, criterion, optimizer, validation, args):
         state = torch.load(latest_model_path)
         epoch = state['epoch']
         model.load_state_dict(state['model'])
-        epoch = epoch
 
         #if latest model path does exist, best_model_path should exists as well
         assert Path(best_model_path).exists() == True, f'best model path {best_model_path} does not exist'
@@ -117,10 +114,10 @@ def train(train_loader, model, criterion, optimizer, validation, args):
 
             masks_pred = model(input_var)
 
-            masks_probs_flat = masks_pred.view(-1)
-            true_masks_flat  = target_var.view(-1)
+            masks_pred = masks_pred.view(-1)
+            target_var = target_var.view(-1)
+            loss = criterion(masks_pred, target_var)
 
-            loss = criterion(masks_probs_flat, true_masks_flat)
             losses.update(loss)
             tq.set_postfix(loss='{:.5f}'.format(losses.avg))
             tq.update(args.batch_size)
@@ -159,12 +156,14 @@ def validate(model, val_loader, criterion):
     losses = AverageMeter()
     model.eval()
     with torch.no_grad():
-
         for i, (input, target) in enumerate(val_loader):
             input_var = Variable(input).cuda()
             target_var = Variable(target).cuda()
 
             output = model(input_var)
+
+            output = output.view(-1)
+            target_var = target_var.view(-1)
             loss = criterion(output, target_var)
 
             losses.update(loss.item(), input_var.size(0))
@@ -190,30 +189,48 @@ def calc_crack_pixel_weight(mask_dir):
 
     return avg_w / (1.0 - avg_w)
 
-if __name__ == '__main__':
+def create_loader(dir, args):
+    img_dir = os.path.join(*[dir, 'images'])
+    mask_dir = os.path.join(*[dir, 'masks'])
+    img_names  = sorted([path.name for path in Path(img_dir).glob('*.jpg')])
+    mask_names = sorted([path.name for path in Path(mask_dir).glob('*.jpg')])
+
+    #sanity checking'
+    assert len(img_names) == len(mask_names), 'mismatched number of image and masks'
+    for img_name, mask_name in zip(img_names, mask_names):
+        assert img_name == mask_name, 'mismatched image name vs mask name'
+
+    #join_tfms = albu.Compose([albu.VerticalFlip(), albu.HorizontalFlip(), albu.ShiftScaleRotate()])
+    join_tfms = albu.Compose([albu.VerticalFlip(), albu.HorizontalFlip()])
+    #img_tfms  = albu.Compose([albu.RandomBrightnessContrast(), albu.RandomGamma(), albu.Normalize(), ToTensor()])
+    img_tfms = albu.Compose([albu.Normalize(), ToTensor()])
+
+    mask_tfms = albu.Compose([ToTensor()])
+
+    #dataset = ImgDataSetJoint(img_dir=img_dir, img_fnames=img_names, mask_dir=mask_dir, mask_fnames=mask_names, joint_transform=join_tfms, img_transform=img_tfms, mask_transform=mask_tfms)
+    dataset = ImgDataSet(img_dir=img_dir, img_fnames=img_names, mask_dir=mask_dir, mask_fnames=mask_names, img_transform=img_tfms, mask_transform=mask_tfms)
+
+    train_loader = DataLoader(dataset, args.batch_size, shuffle=True, pin_memory=torch.cuda.is_available(), num_workers=args.num_workers)
+
+    return train_loader
+
+def main():
     parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
+
+    parser.add_argument('-data_dir', type=str, help='input dataset directory')
+    parser.add_argument('-model_dir', type=str, help='output dataset directory')
+    parser.add_argument('-model_type', type=str, required=False, default='resnet101', help='vgg16 or resnet101')
+
     parser.add_argument('-n_epoch', default=10, type=int, metavar='N', help='number of total epochs to run')
     parser.add_argument('-lr', default=0.001, type=float, metavar='LR', help='initial learning rate')
     parser.add_argument('-momentum', default=0.9, type=float, metavar='M', help='momentum')
     parser.add_argument('-print_freq', default=20, type=int, metavar='N', help='print frequency (default: 10)')
     parser.add_argument('-weight_decay', default=1e-4, type=float, metavar='W', help='weight decay (default: 1e-4)')
-    parser.add_argument('-batch_size',  default=4, type=int,  help='weight decay (default: 1e-4)')
+    parser.add_argument('-batch_size', default=4, type=int, help='weight decay (default: 1e-4)')
     parser.add_argument('-num_workers', default=4, type=int, help='output dataset directory')
-
-    parser.add_argument('-data_dir',type=str, help='input dataset directory')
-    parser.add_argument('-model_dir', type=str, help='output dataset directory')
-    parser.add_argument('-model_type', type=str, required=False, default='resnet101', choices=['vgg16', 'resnet101', 'resnet34'])
 
     args = parser.parse_args()
     os.makedirs(args.model_dir, exist_ok=True)
-
-    DIR_IMG  = os.path.join(args.data_dir, 'images')
-    DIR_MASK = os.path.join(args.data_dir, 'masks')
-
-    img_names  = [path.name for path in Path(DIR_IMG).glob('*.jpg')]
-    mask_names = [path.name for path in Path(DIR_MASK).glob('*.jpg')]
-
-    print(f'total images = {len(img_names)}')
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -223,30 +240,20 @@ if __name__ == '__main__':
                                 momentum=args.momentum,
                                 weight_decay=args.weight_decay)
 
-    #crack_weight = 0.4*calc_crack_pixel_weight(DIR_MASK)
-    #print(f'positive weight: {crack_weight}')
-    #criterion = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([crack_weight]).to('cuda'))
+    # crack_weight = 0.4*calc_crack_pixel_weight(DIR_MASK)
+    # print(f'positive weight: {crack_weight}')
+    # criterion = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([crack_weight]).to('cuda'))
     criterion = nn.BCEWithLogitsLoss().to('cuda')
 
-    channel_means = [0.485, 0.456, 0.406]
-    channel_stds  = [0.229, 0.224, 0.225]
-    train_tfms = transforms.Compose([transforms.ToTensor(),
-                                     transforms.Normalize(channel_means, channel_stds)])
+    train_dir = os.path.join(*[args.data_dir, 'train'])
+    valid_dir = os.path.join(*[args.data_dir, 'valid'])
 
-    val_tfms = transforms.Compose([transforms.ToTensor(),
-                                   transforms.Normalize(channel_means, channel_stds)])
-
-    mask_tfms = transforms.Compose([transforms.ToTensor()])
-
-    dataset = ImgDataSet(img_dir=DIR_IMG, img_fnames=img_names, img_transform=train_tfms, mask_dir=DIR_MASK, mask_fnames=mask_names, mask_transform=mask_tfms)
-    train_size = int(0.85*len(dataset))
-    valid_size = len(dataset) - train_size
-    train_dataset, valid_dataset = random_split(dataset, [train_size, valid_size])
-
-    train_loader = DataLoader(train_dataset, args.batch_size, shuffle=False, pin_memory=torch.cuda.is_available(), num_workers=args.num_workers)
-    valid_loader = DataLoader(valid_dataset, args.batch_size, shuffle=False, pin_memory=torch.cuda.is_available(), num_workers=args.num_workers)
+    train_loader = create_loader(train_dir, args)
+    valid_loader = create_loader(valid_dir, args)
 
     model.cuda()
+    train(train_loader, valid_loader, model, criterion, optimizer, validate, args)
 
-    train(train_loader, model, criterion, optimizer, validate, args)
+if __name__ == '__main__':
+    main()
 
