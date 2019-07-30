@@ -54,12 +54,25 @@ If you want access to the original datasets before they are merged, please conta
 
 ***
 # Dependencies
+Create conda environment from yaml file:
+...
+
+or explicity using:
 ```python
-conda create --name crack
+conda create --name crackseg_env python=3
+conda activate crackseg_env
 conda install -c anaconda pytorch-gpu 
 conda install -c conda-forge opencv 
 conda install matplotlib scipy numpy tqdm pillow
 ```
+
+#### Used Machine
+Here are the specifications of the machine used for running the net and evaluation:
+Operating System: Pop!OS 18.10
+Graphics Card: GeForce RTX 2080 Ti/PCIe/SSE2
+CUDA version: TODO
+
+
 
 ***
 # Inference
@@ -68,7 +81,7 @@ conda install matplotlib scipy numpy tqdm pillow
 - put the downloaded model under the folder ./models
 - run the code
 ```pythonstub
-python inference_unet.py  -in_dir ./test_images -model_path ./models/model_unet_resnet_101_best.pt -out_dir ./test_result
+python inference_unet.py  -img_dir ./test_images -model_path ./models/model_vgg_best.pt -model_type vgg16 -out_pred_dir ./test_result
 ```
 
 ***
