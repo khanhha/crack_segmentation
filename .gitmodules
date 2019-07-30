@@ -1,0 +1,3 @@
+[submodule "TernausNet"]
+	path = TernausNet
+	url = https://github.com/ternaus/TernausNet.git
