@@ -52,6 +52,17 @@ The splitting is stratified so that the proportion of each dataset in the train 
 
 If you want access to the original datasets before they are merged, please contact me through email: khanhhh89@gmail.com
 
+OVERVIEW TABLE DATASETS
+
+| File Prefix            | Training | Test  | Total  | Labelstyle | Orig. Resolution |Publication(s) | Link |
+|---|---|---|---|---|---|---|---|
+| CFD (?)                    | 100      | 18    | 118    | segments | 480x320| Cui 2015, Shi 2016 | [CrackForest-dataset](https://github.com/cuilimeng/CrackForest-dataset)
+| CRACK500 (?)              | 2,858    | 505   | 3,363  | segments | ~2,000x1,500| Yang 2019 | [CRACK500 (dataset not listed; probably the authors need to be contacted directly)](https://github.com/fyangneil/pavement-crack-detection)
+| DeepCrack (freely accessible)             | 443      | 78    | 521    | segments | 544x384 | Liu 2019  | [DeepCrack](https://github.com/yhlleo/DeepCrack) |
+| GAPS384 (request needed) | 433      | 76    | 509    | segments | 1,920x1,080 | Eisenbach 2017 | [German  Asphalt  Pavement  Distress](https://www.tu-ilmenau.de/en/neurob/data-sets-code/gaps/)
+
+
+
 ***
 # Dependencies
 Create conda environment from yaml file:
