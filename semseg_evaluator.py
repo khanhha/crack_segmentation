@@ -37,6 +37,7 @@ if __name__ == '__main__':
 
   all_preds = np.array([])
   all_trues = np.array([])
+  all_weigh = np.array([])
 
   # load images
   for path in predictions:
@@ -48,9 +49,13 @@ if __name__ == '__main__':
     path = path.replace('.jpg', '.png')
     img = cv2.imread(os.path.join(args.true_path, path), cv2.IMREAD_GRAYSCALE) / 255.0
     if len(np.unique(img)) > 2:
+       print(np.unique(img))
        print("Warning: Ground Truth (", path, ") is not binary, thus will be binarized at 0.3")
+       all_weigh = np.append(all_weigh, np.where((0.1<=img) * (img<0.3), 0.0, 1.0).flatten(), axis=0)
        img = np.where(img>=0.3, 1.0, 0.0)
     all_trues = np.append(all_trues, img.flatten(), axis=0)  
+
+    
 
 
   # precision recall curve
@@ -71,7 +76,7 @@ if __name__ == '__main__':
   f1 = np.array(f1)
   best_f1 = np.max(f1)
   best_thresh = thresholds[np.argmax(f1)*10]
-  print("Best f1: ", best_f1, best_thresh)
+  print("Best f1: ", best_f1)
   print("at threshold: ", best_thresh)
 
   # IoU (Jaccard index)
