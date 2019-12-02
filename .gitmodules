@@ -1,0 +1,3 @@
+[submodule "uav75"]
+	path = uav75
+	url = https://github.com/christiab/uav75.git
