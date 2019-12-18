@@ -8,7 +8,8 @@ git clone https://github.com/khanhha/crack_segmentation.git --recursive
 ## Model
 The trained model can be obtained by:
 ```
-wget https://cloud.uni-weimar.de/s/m5KpTHomWjnyGQb
+cd model
+wget https://cloud.uni-weimar.de/s/m5KpTHomWjnyGQb/download -O model_cracknausnet.pt
 ```
 
 ## Reference
