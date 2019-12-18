@@ -5,6 +5,12 @@ For cloning the repository, please use:
 git clone https://github.com/khanhha/crack_segmentation.git --recursive
 ```
 
+## Model
+The trained model can be obtained by:
+```
+wget https://cloud.uni-weimar.de/s/m5KpTHomWjnyGQb
+```
+
 ## Reference
 For reference and citation please use (will be shortly put into final format):
 
