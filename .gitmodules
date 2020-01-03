@@ -4,3 +4,6 @@
 [submodule "TernausNet"]
 	path = TernausNet
 	url = https://github.com/ternaus/TernausNet.git
+[submodule "evaluation"]
+	path = evaluation
+	url = https://github.com/christiab/evaluation.git
