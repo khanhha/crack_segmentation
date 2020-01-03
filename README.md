@@ -26,6 +26,13 @@ python inference.py \
 -device cuda:0
 ```
 
+## Submodules
+- TernausNet
+- UAV75
+- Evaluation
+- Filter (to come...)
+
+
 ## Drawbacks
 - Overproportionally large encoder (VGG16)
 - Generalizability to other concrete surfaces (with possibly different planking patterns) not assessed
@@ -39,3 +46,5 @@ python inference.py \
 For reference and citation please use (will be shortly put into final format):
 
 Benz, C., Debus, P., Ha, H.-K. & Rodehorst, V. (2019): Crack Segmentation on UAS-based Imagery using Transfer Learning. Image and Vision Computing New Zealand, IVCNZ, Dunedin.
+
+See: [http://ivcnz2019.otago.ac.nz/](http://ivcnz2019.otago.ac.nz/)
