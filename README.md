@@ -36,15 +36,15 @@ or run directly from command line:
 python evaluation/semseg_evaluator.py \
 --pred_path ./uav_results \
 --true_path ./uav75/test_lab \
---show_pr_curve True
+--show_pr_curve
 ```
 The evaluation offers a clear interface: ```--pred_path``` refers to a folder containing probability maps/heatmaps (range [0;1]) as images. The argument ```--true_path``` refers to the ground truth stored as images. To display the precision-recall-curve set the flag ```--show_pr_curve```.
 
 
 ## Submodules
-- TernausNet
-- UAV75
-- Evaluation
+- TernausNet: hosts the used architecture
+- UAV75: hosts the used dataset
+- Evaluation: hosts the evaluation script
 - Patcher
 - Filter (to come...)
 
