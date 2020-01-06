@@ -40,6 +40,14 @@ python evaluation/semseg_evaluator.py \
 ```
 The evaluation offers a clear interface: ```--pred_path``` refers to a folder containing probability maps/heatmaps (range [0;1]) as images. The argument ```--true_path``` refers to the ground truth stored as images. To display the precision-recall-curve set the flag ```--show_pr_curve```.
 
+## Datasets
+Apart from the UAV75 dataset, other datasets were used for training. Please refer to:
+- CrackTree260: https://sites.google.com/site/qinzoucn/
+- CRKWH100: https://sites.google.com/site/qinzoucn/
+- Stone311: https://sites.google.com/site/qinzoucn/
+- CrackForest: https://github.com/cuilimeng/CrackForest-dataset
+- CRACK500: https://github.com/fyangneil/pavement-crack-detection
+- DeepCrack: https://github.com/yhlleo/DeepCrack
 
 ## Submodules
 - TernausNet: hosts the used architecture
@@ -61,6 +69,6 @@ The evaluation offers a clear interface: ```--pred_path``` refers to a folder co
 ## Reference
 For reference and citation please use (will be shortly put into final format):
 
-Benz, C., Debus, P., Ha, H.-K. & Rodehorst, V. (2019): Crack Segmentation on UAS-based Imagery using Transfer Learning. Image and Vision Computing New Zealand, IVCNZ, Dunedin.
+Benz, C., Debus, P., Ha, H.-K. & Rodehorst, V. (2019): Crack Segmentation on UAS-based Imagery using Transfer Learning. *Image and Vision Computing New Zealand*, *IVCNZ*, Dunedin.
 
 See: [http://ivcnz2019.otago.ac.nz/](http://ivcnz2019.otago.ac.nz/)
