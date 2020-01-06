@@ -26,10 +26,26 @@ python inference.py \
 -device cuda:0
 ```
 
+## Evaluation
+Before running the evaluation you have to make sure that the submodule ```evaluation``` was properly cloned. To run the evaluation use:
+```
+bash run_evaluation.sh
+```
+or run directly from command line:
+```
+python evaluation/semseg_evaluator.py \
+--pred_path ./uav_results \
+--true_path ./uav75/test_lab \
+--show_pr_curve True
+```
+The evaluation offers a clear interface: ```--pred_path``` refers to a folder containing probability maps/heatmaps (range [0;1]) as images. The argument ```--true_path``` refers to the ground truth stored as images. To display the precision-recall-curve set the flag ```--show_pr_curve```.
+
+
 ## Submodules
 - TernausNet
 - UAV75
 - Evaluation
+- Patcher
 - Filter (to come...)
 
 
