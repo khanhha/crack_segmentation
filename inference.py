@@ -13,6 +13,7 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 from TernausNet.unet_models import UNet16
 from patcher import split_in_chunks, merge_from_chunks
+from crack_filter import filter_cracks, fuse_results
 from matplotlib import pyplot as plt
 
 class CrackDetector():
@@ -30,7 +31,7 @@ class CrackDetector():
     self.model.eval()
 
 
-  def run(self, image_path, out_path):
+  def run(self, image_path, out_path, rotation_fusion=True):
     # load image
     img = cv2.imread(image_path, cv2.IMREAD_COLOR)
     h_orig, w_orig, _ = img.shape
@@ -58,7 +59,9 @@ class CrackDetector():
     patches = split_in_chunks(img_tmp, size=size, padding=padding)
 
     # container for predictions
-    predicts = []
+    predicts_crack = []
+    predicts_crack_rot = []
+    predicts_plank = []
 
     # loop over all patches
     for patch in patches:
@@ -74,14 +77,52 @@ class CrackDetector():
       # apply softmax on output
       pred = F.softmax(pred, dim=1).data.cpu().numpy()
 
-      # select relevant class (pred[0,0,:,:] non-crack, pred[0,1,:,:] is planking pattern)
-      pred = pred[0,args.category,:,:]
+      # select relevant class 
+      # (pred[0,0,...] non-crack; pred[0,1,...] crack; pred[0,2,...] is planking pattern)
+      pred_crack = pred[0,2,:,:]
+      pred_plank = pred[0,1,:,:]
 
       # append to results
-      predicts.append(pred)
+      predicts_crack.append(pred_crack)
+      predicts_plank.append(pred_plank)
+
+      if rotation_fusion:
+        # rotate input patch
+        patch = cv2.rotate(patch, cv2.ROTATE_90_CLOCKWISE)
+
+        # as before...
+        X = tfms(patch)
+        X = Variable(X.unsqueeze(0)).to(self.device)  # [N, C, H, W]
+        pred = self.model(X)
+        pred = F.softmax(pred, dim=1).data.cpu().numpy()
+        pred_crack = pred[0,2,:,:]
+ 
+        # re-rotate result and append
+        pred_crack = cv2.rotate(pred_crack, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        predicts_crack_rot.append(pred_crack)
+        
 
     # re-merge the patches into one image
-    img_res = merge_from_chunks(predicts, h_orig, w_orig, size=size, padding=padding)
+    img_res_crack = merge_from_chunks(predicts_crack, h_orig, w_orig, size=size, padding=padding)
+    img_res_crack_rot = merge_from_chunks(predicts_crack_rot, h_orig, w_orig, size=size, padding=padding)
+    img_res_plank = merge_from_chunks(predicts_plank, h_orig, w_orig, size=size, padding=padding)
+
+    if rotation_fusion:
+      # fuse the results
+      img_res_crack = fuse_results(img_res_crack, img_res_crack_rot)
+
+    # filter result
+    img_res = filter_cracks(img_res_crack, img_res_plank)
+
+    plt.subplot(221)
+    plt.imshow(img_res_crack)
+    plt.subplot(222)
+    plt.imshow(img_res_plank)
+    plt.subplot(223)
+    plt.imshow(img_res)
+    plt.subplot(224)
+    plt.imshow(img_res_crack_rot)
+#    plt.show()
 
     # shape back to original size
     img_res = cv2.resize(img_res, (w_orig, h_orig), cv2.INTER_AREA)
