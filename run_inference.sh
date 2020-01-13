@@ -2,7 +2,9 @@
 
 python inference.py \
 --model_path ./models/model_weights_cracknausnet.pt \
---image_path /home/chrisbe/tmp/DSC07158.jpg \
---out_path ./results/DSC07158.jpg \
---device cuda:0 \
---category 2
+--image_path /home/chrisbe/tmp/9_Kamera5_23_DxO.jpg \
+--out_path ./results/9_Kamera5_23_DxO.jpg \
+--planking_filtering \
+--rotation_fusion \
+--device cuda:0 
+

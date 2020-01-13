@@ -18,4 +18,4 @@ def filter_cracks(img_crack, img_plank, thresh=0.5):
   # apply mask on crack image
   img_res = img_bin*img_crack
   
-  return img_res*255
+  return img_res

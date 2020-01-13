@@ -31,7 +31,7 @@ class CrackDetector():
     self.model.eval()
 
 
-  def run(self, image_path, out_path, rotation_fusion=True):
+  def run(self, image_path, out_path, planking_filtering=False, rotation_fusion=True):
     # load image
     img = cv2.imread(image_path, cv2.IMREAD_COLOR)
     h_orig, w_orig, _ = img.shape
@@ -103,35 +103,27 @@ class CrackDetector():
         
 
     # re-merge the patches into one image
-    img_res_crack = merge_from_chunks(predicts_crack, h_orig, w_orig, size=size, pad=padding)
-    img_res_crack_rot = merge_from_chunks(predicts_crack_rot, h_orig, w_orig, size=size, pad=padding)
+    img_res = merge_from_chunks(predicts_crack, h_orig, w_orig, size=size, pad=padding)
     img_res_plank = merge_from_chunks(predicts_plank, h_orig, w_orig, size=size, pad=padding)
 
     if rotation_fusion:
+      # re-merge the patches into one image      
+      img_res_crack_rot = merge_from_chunks(predicts_crack_rot, h_orig, w_orig, size=size, pad=padding)
       # fuse the results
-      img_res_crack = fuse_results(img_res_crack, img_res_crack_rot)
+      img_res = fuse_results(img_res, img_res_crack_rot)
 
-    # filter result
-    img_res = filter_cracks(img_res_crack, img_res_plank)
-
-    plt.subplot(221)
-    plt.imshow(img_res_crack)
-    plt.subplot(222)
-    plt.imshow(img_res_plank)
-    plt.subplot(223)
-    plt.imshow(img_res)
-    plt.subplot(224)
-    plt.imshow(img_res_crack_rot)
-#    plt.show()
+    if planking_filtering:
+      # filter result
+      img_res = filter_cracks(img_res, img_res_plank)
 
     # shape back to original size
     img_res = cv2.resize(img_res, (w_orig, h_orig), cv2.INTER_AREA)
 
     # save heatmap
-    cv2.imwrite(out_path, img_res)
+    cv2.imwrite(out_path, img_res*255)
 
     # save overlayed image (225/2 for nicer use of color map)
-    img_res = np.uint8(cv2.cvtColor(img_res.astype('float32'), cv2.COLOR_GRAY2BGR) * 0.5)
+    img_res = np.uint8(cv2.cvtColor(img_res.astype('float32'), cv2.COLOR_GRAY2BGR) * 255/2)
     img_res = cv2.applyColorMap(img_res, cv2.COLORMAP_HOT)
     cv2.imwrite(out_path.replace('.jpg', '_overlay.jpg'), cv2.addWeighted(img, 0.9, img_res, 0.8, 0))
     
@@ -143,10 +135,11 @@ if __name__ == "__main__":
   parser.add_argument('--image_path', type=str, default='./uav75/test_img/DSC00595.jpg', required=False, help='path to input image')
   parser.add_argument('--out_path', type=str, default='./results/DSC00595.jpg', required=False, help='path to which the prediction is saved')
   parser.add_argument('--device', type=str, default='cuda:0', required=False, help='device to used for inference')
-  parser.add_argument('--category', type=int, default=2, required=False, help='selected category (1: planking pattern, 2: crack)')
+  parser.add_argument('--planking_filtering', action='store_true', required=False, help='turn plancking filtering on')
+  parser.add_argument('--rotation_fusion', action='store_true', required=False, help='turn 90 degree fusion on')
   args = parser.parse_args()
 
   detector = CrackDetector(args.model_path, args.device)
-  detector.run(args.image_path, args.out_path)
+  detector.run(args.image_path, args.out_path, args.planking_filtering, args.rotation_fusion)
 
 
