@@ -128,10 +128,10 @@ class CrackDetector():
     img_res = cv2.resize(img_res, (w_orig, h_orig), cv2.INTER_AREA)
 
     # save heatmap
-    cv2.imwrite(out_path, img_res*255)
+    cv2.imwrite(out_path, img_res)
 
     # save overlayed image (225/2 for nicer use of color map)
-    img_res = np.uint8(cv2.cvtColor(img_res.astype('float32'), cv2.COLOR_GRAY2BGR) * 255/2)
+    img_res = np.uint8(cv2.cvtColor(img_res.astype('float32'), cv2.COLOR_GRAY2BGR) * 0.5)
     img_res = cv2.applyColorMap(img_res, cv2.COLORMAP_HOT)
     cv2.imwrite(out_path.replace('.jpg', '_overlay.jpg'), cv2.addWeighted(img, 0.9, img_res, 0.8, 0))
     
