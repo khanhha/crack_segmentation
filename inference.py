@@ -12,6 +12,8 @@ import torchvision.transforms as transforms
 from torch.autograd import Variable
 import torch.nn.functional as F
 from TernausNet.unet_models import UNet16
+from patcher import split_in_chunks, merge_from_chunks
+from matplotlib import pyplot as plt
 
 class CrackDetector():
   def __init__(self, model_path, device='cuda:0'):
@@ -34,52 +36,73 @@ class CrackDetector():
     h_orig, w_orig, _ = img.shape
 
     # make divisible by 32 to use fully convolutional property
-    h_tmp = 32*round(h_orig / 32)
-    w_tmp = 32*round(w_orig / 32)
-    img_tmp = cv2.resize(img, (w_tmp, h_tmp), cv2.INTER_AREA)
-    img_tmp = cv2.cvtColor(img_tmp,cv2.COLOR_BGR2RGB)
-   
+#    h_tmp = 32*round(h_orig / 32)
+#    w_tmp = 32*round(w_orig / 32)
+#    img_tmp = cv2.resize(img, (w_tmp, h_tmp), cv2.INTER_AREA)
+    img_tmp = cv2.cvtColor(img,cv2.COLOR_BGR2RGB)
 
-    # apply preprocessing transformations (values from ImageNet)
+    # determine preprocessing transformations (values from ImageNet)
     channel_means = [0.485, 0.456, 0.406]
     channel_stds  = [0.229, 0.224, 0.225]
     tfms = transforms.Compose([
         transforms.ToTensor(), 
         transforms.Normalize(channel_means, channel_stds)
       ])
-    X = tfms(img_tmp)
 
-    # add batch dimension
-    X = Variable(X.unsqueeze(0)).to(self.device)  # [N, C, H, W]
+    # set used input size for fully-convolutional network
+    # (depends on GPU memory, input size of net is 448x448)
+    size=3*448
+    padding=32
 
-    # compute forward pass
-    mask = self.model(X)
-   
-    # apply softmax on output
-    mask = F.softmax(mask, dim=1).data.cpu().numpy()
+    # split image into patches
+    patches = split_in_chunks(img_tmp, size=size, padding=padding)
 
-    # select relevant class (mask[0,0,:,:] non-crack, mask[0,1,:,:] is planking pattern)
-    mask = mask[0,2,:,:]
+    # container for predictions
+    predicts = []
+
+    # loop over all patches
+    for patch in patches:
+      # transform patch
+      X = tfms(patch)
+
+      # add batch dimension
+      X = Variable(X.unsqueeze(0)).to(self.device)  # [N, C, H, W]
+
+      # compute forward pass
+      pred = self.model(X)
+     
+      # apply softmax on output
+      pred = F.softmax(pred, dim=1).data.cpu().numpy()
+
+      # select relevant class (pred[0,0,:,:] non-crack, pred[0,1,:,:] is planking pattern)
+      pred = pred[0,args.category,:,:]
+
+      # append to results
+      predicts.append(pred)
+
+    # re-merge the patches into one image
+    img_res = merge_from_chunks(predicts, h_orig, w_orig, size=size, padding=padding)
 
     # shape back to original size
-    mask = cv2.resize(mask, (w_orig, h_orig), cv2.INTER_AREA)
+    img_res = cv2.resize(img_res, (w_orig, h_orig), cv2.INTER_AREA)
 
     # save heatmap
-    cv2.imwrite(out_path, mask*255)
+    cv2.imwrite(out_path, img_res*255)
 
     # save overlayed image (225/2 for nicer use of color map)
-    mask = np.uint8(cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR) * 255/2)
-    mask = cv2.applyColorMap(mask, cv2.COLORMAP_HOT)
-    cv2.imwrite(out_path.replace('.jpg', '_overlay.jpg'), cv2.addWeighted(img, 0.9, mask, 0.8, 0))
+    img_res = np.uint8(cv2.cvtColor(img_res.astype('float32'), cv2.COLOR_GRAY2BGR) * 255/2)
+    img_res = cv2.applyColorMap(img_res, cv2.COLORMAP_HOT)
+    cv2.imwrite(out_path.replace('.jpg', '_overlay.jpg'), cv2.addWeighted(img, 0.9, img_res, 0.8, 0))
     
 
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
-  parser.add_argument('-model_path', type=str, default='./models/model_weights_cracknausnet.pt', required=False, help='path to model weights')
-  parser.add_argument('-image_path', type=str, default='./uav75/test_img/DSC00595.jpg', required=False, help='path to input image')
-  parser.add_argument('-out_path', type=str, default='./results/DSC00595.jpg', required=False, help='path to which the prediction is saved')
-  parser.add_argument('-device', type=str, default='cuda:0', required=False, help='device to used for inference')
+  parser.add_argument('--model_path', type=str, default='./models/model_weights_cracknausnet.pt', required=False, help='path to model weights')
+  parser.add_argument('--image_path', type=str, default='./uav75/test_img/DSC00595.jpg', required=False, help='path to input image')
+  parser.add_argument('--out_path', type=str, default='./results/DSC00595.jpg', required=False, help='path to which the prediction is saved')
+  parser.add_argument('--device', type=str, default='cuda:0', required=False, help='device to used for inference')
+  parser.add_argument('--category', type=int, default=2, required=False, help='selected category (1: planking pattern, 2: crack)')
   args = parser.parse_args()
 
   detector = CrackDetector(args.model_path, args.device)
