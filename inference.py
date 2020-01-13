@@ -56,7 +56,7 @@ class CrackDetector():
     padding=32
 
     # split image into patches
-    patches = split_in_chunks(img_tmp, size=size, padding=padding)
+    patches = split_in_chunks(img_tmp, size=size, pad=padding)
 
     # container for predictions
     predicts_crack = []
@@ -103,9 +103,9 @@ class CrackDetector():
         
 
     # re-merge the patches into one image
-    img_res_crack = merge_from_chunks(predicts_crack, h_orig, w_orig, size=size, padding=padding)
-    img_res_crack_rot = merge_from_chunks(predicts_crack_rot, h_orig, w_orig, size=size, padding=padding)
-    img_res_plank = merge_from_chunks(predicts_plank, h_orig, w_orig, size=size, padding=padding)
+    img_res_crack = merge_from_chunks(predicts_crack, h_orig, w_orig, size=size, pad=padding)
+    img_res_crack_rot = merge_from_chunks(predicts_crack_rot, h_orig, w_orig, size=size, pad=padding)
+    img_res_plank = merge_from_chunks(predicts_plank, h_orig, w_orig, size=size, pad=padding)
 
     if rotation_fusion:
       # fuse the results
