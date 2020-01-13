@@ -4,11 +4,63 @@ from scipy.ndimage.filters import maximum_filter
 import numpy as np
 from scipy.ndimage.filters import gaussian_filter
 import argparse
+from scipy import signal
 
 
 image_path="./results/DSC07158_original.jpg"
 crack_path="./results/DSC07158_crack.jpg"
 plank_path="./results/DSC07158_planking.jpg"
+
+
+def fuse_results(img_crack1, img_crack2):
+  return img_crack1*0.5 + img_crack2*0.5
+
+
+def filter_cracks(img_crack, img_plank, thresh=0.5):
+  # max filtering
+  kernel = np.ones((10,10))
+  img_tmp = maximum_filter(img_plank, footprint=kernel)
+ 
+  # create binary mask
+  img_bin = np.where(img_tmp>=thresh,0,1)
+
+  # apply mask on crack image
+  img_res = img_bin*img_crack
+  
+  return img_res*255
+
+
+def filter_probs(img_crack, thresh=0.5, kernel_size=10):
+  img_crack = img_crack/255
+
+  s = kernel_size
+#  kernel = np.ones((10,10)) / (10*10)
+#  img_tmp = signal.convolve2d(img_crack, kernel, boundary='symm', mode='same') 
+  if False:
+    kernel = np.ones((s,s),np.float32)/ (s*s)
+    img_tmp = cv2.filter2D(img_crack,-1,kernel)
+  else:
+    img_tmp = cv2.blur(img_crack,(s,s))
+
+
+
+  img_bin = np.where(img_tmp>=thresh,1,0)
+
+  plt.subplot(221)
+  plt.imshow(img_crack)
+  plt.subplot(222)
+  plt.imshow(img_tmp)
+  plt.subplot(223)
+  plt.imshow(img_bin)
+#  plt.show()
+
+  img_res = img_bin*img_crack
+
+#  if out_path is not None:
+#    cv2.imwrite(out_path, img_res*255)
+  
+  return img_bin
+
 
 
 if __name__ == "__main__":
@@ -22,14 +74,7 @@ if __name__ == "__main__":
   img_crack = cv2.imread(args.crack_path, cv2.IMREAD_GRAYSCALE)/255.0
   img_plank = cv2.imread(args.plank_path, cv2.IMREAD_GRAYSCALE)/255.0
 
-  kernel = np.ones((10,10))
-  img_tmp = maximum_filter(img_plank, footprint=kernel)
- 
-  img_bin = np.where(img_tmp>=0.5,0,1)
-
-  img_res = img_bin*img_crack
-
-  cv2.imwrite(args.out_path, img_res*255)
+  filter_cracks(img_crack, img_plank, args.out_path)
 
 
 
