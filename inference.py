@@ -14,7 +14,6 @@ import torch.nn.functional as F
 from TernausNet.unet_models import UNet16
 from patcher import split_in_chunks, merge_from_chunks
 from crack_filter import filter_cracks, fuse_results
-from matplotlib import pyplot as plt
 
 class CrackDetector():
   def __init__(self, model_path, device='cuda:0'):
