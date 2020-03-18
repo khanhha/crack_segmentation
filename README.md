@@ -50,8 +50,6 @@ The two folders images and masks contain all the images.
 The two folders train and test contain training and testing images splitted from the two above folder. 
 The splitting is stratified so that the proportion of each dataset in the train and test folder are similar
 
-If you want access to the original datasets before they are merged, please contact me through email: khanhhh89@gmail.com
-
 ***
 # Dependencies
 ```python
