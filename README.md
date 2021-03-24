@@ -66,7 +66,8 @@ conda install matplotlib scipy numpy tqdm pillow
 - put the downloaded model under the folder ./models
 - run the code
 ```pythonstub
-python inference_unet.py  -in_dir ./test_images -model_path ./models/model_unet_resnet_101_best.pt -out_dir ./test_result
+python inference_unet.py  -img_dir ./test_imgs -model_path ./models/model_unet_vgg_16_best.pt -model_type vgg16 -out_pred_dir ./test_results
+# python inference_unet.py  -in_dir ./test_images -model_path ./models/model_unet_resnet_101_best.pt -out_dir ./test_result
 ```
 
 ***

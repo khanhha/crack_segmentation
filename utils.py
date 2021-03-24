@@ -27,7 +27,7 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
 def cuda(x):
-    return x.cuda(async=True) if torch.cuda.is_available() else x
+    return x.cuda(non_blocking=True) if torch.cuda.is_available() else x
 
 def write_event(log, step, **data):
     data['step'] = step
