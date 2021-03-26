@@ -112,8 +112,8 @@ def train(train_loader, model, criterion, optimizer, validation, args):
 
         model.train()
         for i, (input, target) in enumerate(train_loader):
-            input_var  = Variable(input).cuda()
-            target_var = Variable(target).cuda()
+            input_var  = Variable(input)
+            target_var = Variable(target)
 
             masks_pred = model(input_var)
 
