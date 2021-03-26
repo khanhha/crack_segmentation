@@ -4,3 +4,4 @@ models/*
 venv*
 test_imgs/*
 test_results/*
+crack_segmentation_dataset/*
