@@ -81,7 +81,7 @@ def train(train_loader, model, criterion, optimizer, validation, args):
     best_model_path = os.path.join(*[args.model_dir, 'model_best.pt'])
 
     if latest_model_path is not None:
-        state = torch.load(latest_model_path)
+        state = torch.load(latest_model_path, map_location=torch.device('cpu'))
         epoch = state['epoch']
         model.load_state_dict(state['model'])
         epoch = epoch
@@ -245,8 +245,6 @@ if __name__ == '__main__':
 
     train_loader = DataLoader(train_dataset, args.batch_size, shuffle=False, pin_memory=torch.cuda.is_available(), num_workers=args.num_workers)
     valid_loader = DataLoader(valid_dataset, args.batch_size, shuffle=False, pin_memory=torch.cuda.is_available(), num_workers=args.num_workers)
-
-    model.cuda()
 
     train(train_loader, model, criterion, optimizer, validate, args)
 
