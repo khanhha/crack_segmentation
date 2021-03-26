@@ -2,3 +2,5 @@ models/*
 .idea/*
 *pycache*
 venv*
+test_imgs/*
+test_results/*
