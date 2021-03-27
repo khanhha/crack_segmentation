@@ -31,7 +31,7 @@ class DenseBlock(nn.Module):
             for layer in self.layers:
                 out = layer(x)
                 x = torch.cat([x, out], 1)
-                new_features.append(out)
+                new_features.append(out.detach())
             return torch.cat(new_features,1)
         else:
             for layer in self.layers:

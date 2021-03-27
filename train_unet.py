@@ -12,10 +12,13 @@ import os
 import argparse
 import tqdm
 import numpy as np
+from numba import njit
 import scipy.ndimage as ndimage
+
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
+
     def __init__(self):
         self.reset()
 
@@ -31,7 +34,8 @@ class AverageMeter(object):
         self.count += n
         self.avg = self.sum / self.count
 
-def create_model(device, type ='vgg16'):
+
+def create_model(device, type='vgg16'):
     if type == 'vgg16':
         print('create vgg16 model')
         model = UNet16(pretrained=True)
@@ -50,11 +54,13 @@ def create_model(device, type ='vgg16'):
     model.eval()
     return model.to(device)
 
+
 def adjust_learning_rate(optimizer, epoch, lr):
     """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
     lr = lr * (0.1 ** (epoch // 30))
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
+
 
 def find_latest_model_path(dir):
     model_paths = []
@@ -74,8 +80,8 @@ def find_latest_model_path(dir):
     else:
         return None
 
-def train(train_loader, model, criterion, optimizer, validation, args):
 
+def train(train_loader, model, criterion, optimizer, validation, args):
     latest_model_path = find_latest_model_path(args.model_dir)
 
     best_model_path = os.path.join(*[args.model_dir, 'model_best.pt'])
@@ -86,9 +92,9 @@ def train(train_loader, model, criterion, optimizer, validation, args):
         model.load_state_dict(state['model'])
         epoch = epoch
 
-        #if latest model path does exist, best_model_path should exists as well
+        # if latest model path does exist, best_model_path should exists as well
         assert Path(best_model_path).exists() == True, f'best model path {best_model_path} does not exist'
-        #load the min loss so far
+        # load the min loss so far
         best_state = torch.load(latest_model_path)
         min_val_los = best_state['valid_loss']
 
@@ -112,13 +118,13 @@ def train(train_loader, model, criterion, optimizer, validation, args):
 
         model.train()
         for i, (input, target) in enumerate(train_loader):
-            input_var  = Variable(input)
+            input_var = Variable(input)
             target_var = Variable(target)
 
             masks_pred = model(input_var)
 
             masks_probs_flat = masks_pred.view(-1)
-            true_masks_flat  = target_var.view(-1)
+            true_masks_flat = target_var.view(-1)
 
             loss = criterion(masks_probs_flat, true_masks_flat)
             losses.update(loss)
@@ -136,7 +142,7 @@ def train(train_loader, model, criterion, optimizer, validation, args):
         print(f'\tvalid_loss = {valid_loss:.5f}')
         tq.close()
 
-        #save the model of the current epoch
+        # save the model of the current epoch
         epoch_model_path = os.path.join(*[args.model_dir, f'model_epoch_{epoch}.pt'])
         torch.save({
             'model': model.state_dict(),
@@ -155,11 +161,11 @@ def train(train_loader, model, criterion, optimizer, validation, args):
                 'train_loss': losses.avg
             }, best_model_path)
 
+
 def validate(model, val_loader, criterion):
     losses = AverageMeter()
     model.eval()
     with torch.no_grad():
-
         for i, (input, target) in enumerate(val_loader):
             input_var = Variable(input).cuda()
             target_var = Variable(target).cuda()
@@ -171,11 +177,14 @@ def validate(model, val_loader, criterion):
 
     return {'valid_loss': losses.avg}
 
-def save_check_point(state, is_best, file_name = 'checkpoint.pth.tar'):
+
+def save_check_point(state, is_best, file_name='checkpoint.pth.tar'):
     torch.save(state, file_name)
     if is_best:
         shutil.copy(file_name, 'model_best.pth.tar')
 
+
+@njit()
 def calc_crack_pixel_weight(mask_dir):
     avg_w = 0.0
     n_files = 0
@@ -183,12 +192,13 @@ def calc_crack_pixel_weight(mask_dir):
         n_files += 1
         m = ndimage.imread(path)
         ncrack = np.sum((m > 0)[:])
-        w = float(ncrack)/(m.shape[0]*m.shape[1])
-        avg_w = avg_w + (1-w)
+        w = float(ncrack) / (m.shape[0] * m.shape[1])
+        avg_w = avg_w + (1 - w)
 
     avg_w /= float(n_files)
 
     return avg_w / (1.0 - avg_w)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
@@ -197,20 +207,21 @@ if __name__ == '__main__':
     parser.add_argument('-momentum', default=0.9, type=float, metavar='M', help='momentum')
     parser.add_argument('-print_freq', default=20, type=int, metavar='N', help='print frequency (default: 10)')
     parser.add_argument('-weight_decay', default=1e-4, type=float, metavar='W', help='weight decay (default: 1e-4)')
-    parser.add_argument('-batch_size',  default=4, type=int,  help='weight decay (default: 1e-4)')
+    parser.add_argument('-batch_size', default=4, type=int, help='weight decay (default: 1e-4)')
     parser.add_argument('-num_workers', default=4, type=int, help='output dataset directory')
 
-    parser.add_argument('-data_dir',type=str, help='input dataset directory')
+    parser.add_argument('-data_dir', type=str, help='input dataset directory')
     parser.add_argument('-model_dir', type=str, help='output dataset directory')
-    parser.add_argument('-model_type', type=str, required=False, default='resnet101', choices=['vgg16', 'resnet101', 'resnet34'])
+    parser.add_argument('-model_type', type=str, required=False, default='resnet101',
+                        choices=['vgg16', 'resnet101', 'resnet34'])
 
     args = parser.parse_args()
     os.makedirs(args.model_dir, exist_ok=True)
 
-    DIR_IMG  = os.path.join(args.data_dir, 'images')
+    DIR_IMG = os.path.join(args.data_dir, 'images')
     DIR_MASK = os.path.join(args.data_dir, 'masks')
 
-    img_names  = [path.name for path in Path(DIR_IMG).glob('*.jpg')]
+    img_names = [path.name for path in Path(DIR_IMG).glob('*.jpg')]
     mask_names = [path.name for path in Path(DIR_MASK).glob('*.jpg')]
 
     print(f'total images = {len(img_names)}')
@@ -223,13 +234,13 @@ if __name__ == '__main__':
                                 momentum=args.momentum,
                                 weight_decay=args.weight_decay)
 
-    #crack_weight = 0.4*calc_crack_pixel_weight(DIR_MASK)
-    #print(f'positive weight: {crack_weight}')
-    #criterion = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([crack_weight]).to('cuda'))
+    # crack_weight = 0.4*calc_crack_pixel_weight(DIR_MASK)
+    # print(f'positive weight: {crack_weight}')
+    # criterion = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([crack_weight]).to('cuda'))
     criterion = nn.BCEWithLogitsLoss().to('cuda')
 
     channel_means = [0.485, 0.456, 0.406]
-    channel_stds  = [0.229, 0.224, 0.225]
+    channel_stds = [0.229, 0.224, 0.225]
     train_tfms = transforms.Compose([transforms.ToTensor(),
                                      transforms.Normalize(channel_means, channel_stds)])
 
@@ -238,13 +249,15 @@ if __name__ == '__main__':
 
     mask_tfms = transforms.Compose([transforms.ToTensor()])
 
-    dataset = ImgDataSet(img_dir=DIR_IMG, img_fnames=img_names, img_transform=train_tfms, mask_dir=DIR_MASK, mask_fnames=mask_names, mask_transform=mask_tfms)
-    train_size = int(0.85*len(dataset))
+    dataset = ImgDataSet(img_dir=DIR_IMG, img_fnames=img_names, img_transform=train_tfms, mask_dir=DIR_MASK,
+                         mask_fnames=mask_names, mask_transform=mask_tfms)
+    train_size = int(0.85 * len(dataset))
     valid_size = len(dataset) - train_size
     train_dataset, valid_dataset = random_split(dataset, [train_size, valid_size])
 
-    train_loader = DataLoader(train_dataset, args.batch_size, shuffle=False, pin_memory=torch.cuda.is_available(), num_workers=args.num_workers)
-    valid_loader = DataLoader(valid_dataset, args.batch_size, shuffle=False, pin_memory=torch.cuda.is_available(), num_workers=args.num_workers)
+    train_loader = DataLoader(train_dataset, args.batch_size, shuffle=False, pin_memory=False,
+                              num_workers=args.num_workers)
+    valid_loader = DataLoader(valid_dataset, args.batch_size, shuffle=False, pin_memory=False,
+                              num_workers=args.num_workers)
 
     train(train_loader, model, criterion, optimizer, validate, args)
-

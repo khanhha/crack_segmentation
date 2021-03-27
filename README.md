@@ -98,7 +98,7 @@ I am very welcome to further idea from you. please drop me an email at khanhhh89
 - step 2. run the training code
 - step 3: 
 ```python 
-python train_unet.py -data_dir ./crack_segmentation_dataset -model_dir ./models -model_type vgg16
+python train_unet.py -data_dir ./crack_segmentation_dataset -model_dir ./models -model_type resnet34
 ```
 
 # Result

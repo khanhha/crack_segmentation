@@ -59,6 +59,7 @@ def error(preds, targets):
     err = incorrect/n_pixels
     return round(err,5)
 
+
 def train(train_loader, valid_loader, model, criterion, optimizer, validation, args):
     # switch to train mode
     best_model_path = os.path.join(*[args.model_dir, 'model_best.pt'])
@@ -104,7 +105,7 @@ def train(train_loader, valid_loader, model, criterion, optimizer, validation, a
 
         valid_metrics = validation(model, valid_loader, criterion)
         valid_loss = valid_metrics['valid_loss']
-        valid_losses.append(valid_loss)
+        valid_losses.append(valid_loss.detach())
         print(f'\tvalid_loss = {valid_loss:.5f}\n')
 
         tq.close()
@@ -219,9 +220,8 @@ if __name__ == '__main__':
     train_loader = DataLoader(train_dataset, args.batch_size, shuffle=False, pin_memory=torch.cuda.is_available(), num_workers=args.num_workers)
     valid_loader = DataLoader(valid_dataset, args.batch_size, shuffle=False, pin_memory=torch.cuda.is_available(), num_workers=args.num_workers)
 
-    model = tiramisu.FCDenseNet67(n_classes=1).cuda()
+    model = tiramisu.FCDenseNet67(n_classes=1)
     model.apply(weights_init)
-    model.cuda()
     #optimizer = torch.optim.RMSprop(model.parameters(), lr=args.lr, weight_decay=1e-4)
     optimizer = torch.optim.SGD(model.parameters(), args.lr,
                                 momentum=args.momentum,
