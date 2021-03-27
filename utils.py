@@ -4,6 +4,7 @@ from pathlib import Path
 
 import random
 import numpy as np
+from numba import njit
 
 import torch
 import tqdm
@@ -81,7 +82,6 @@ def load_unet_resnet_101(model_path):
     else:
         raise Exception('undefind model format')
 
-    model.cuda()
     model.eval()
 
     return model
@@ -96,11 +96,11 @@ def load_unet_resnet_34(model_path):
     else:
         raise Exception('undefind model format')
 
-    model.cuda()
     model.eval()
 
     return model
 
+@njit()
 def train(args, model, criterion, train_loader, valid_loader, validation, init_optimizer, n_epochs=None, fold=None,
           num_classes=None):
     lr = args.lr
@@ -163,7 +163,7 @@ def train(args, model, criterion, train_loader, valid_loader, validation, init_o
             valid_metrics = validation(model, criterion, valid_loader, num_classes)
             write_event(log, step, **valid_metrics)
             valid_loss = valid_metrics['valid_loss']
-            valid_losses.append(valid_loss)
+            valid_losses.append(valid_loss.detach())
         except KeyboardInterrupt:
             tq.close()
             print('Ctrl+C, saving snapshot')
