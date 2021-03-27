@@ -87,7 +87,7 @@ def train(train_loader, model, criterion, optimizer, validation, args):
     best_model_path = os.path.join(*[args.model_dir, 'model_best.pt'])
 
     if latest_model_path is not None:
-        state = torch.load(latest_model_path, map_location=torch.device('cpu'))
+        state = torch.load(latest_model_path)
         epoch = state['epoch']
         model.load_state_dict(state['model'])
         epoch = epoch
@@ -118,8 +118,8 @@ def train(train_loader, model, criterion, optimizer, validation, args):
 
         model.train()
         for i, (input, target) in enumerate(train_loader):
-            input_var = Variable(input)
-            target_var = Variable(target)
+            input_var = Variable(input).cuda()
+            target_var = Variable(target).cuda()
 
             masks_pred = model(input_var)
 
@@ -216,6 +216,8 @@ if __name__ == '__main__':
                         choices=['vgg16', 'resnet101', 'resnet34'])
 
     args = parser.parse_args()
+    print(f'batch size: {args.batch_size}')
+    print(f'workers: {args.num_workers}')
     os.makedirs(args.model_dir, exist_ok=True)
 
     DIR_IMG = os.path.join(args.data_dir, 'images')
@@ -255,9 +257,11 @@ if __name__ == '__main__':
     valid_size = len(dataset) - train_size
     train_dataset, valid_dataset = random_split(dataset, [train_size, valid_size])
 
-    train_loader = DataLoader(train_dataset, args.batch_size, shuffle=False, pin_memory=False,
+    train_loader = DataLoader(train_dataset, args.batch_size, shuffle=False, pin_memory=torch.cuda.is_available(),
                               num_workers=args.num_workers)
-    valid_loader = DataLoader(valid_dataset, args.batch_size, shuffle=False, pin_memory=False,
+    valid_loader = DataLoader(valid_dataset, args.batch_size, shuffle=False, pin_memory=torch.cuda.is_available(),
                               num_workers=args.num_workers)
+
+    model.cuda()
 
     train(train_loader, model, criterion, optimizer, validate, args)

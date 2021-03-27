@@ -21,7 +21,7 @@ def evaluate_img(model, img):
 
     img_1 = cv.resize(img, (input_width, input_height), cv.INTER_AREA)
     X = train_tfms(Image.fromarray(img_1))
-    X = Variable(X.unsqueeze(0))  # [N, 1, H, W]
+    X = Variable(X.unsqueeze(0)).cuda()  # [N, 1, H, W]
 
     mask = model(X)
 

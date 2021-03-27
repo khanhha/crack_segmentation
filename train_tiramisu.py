@@ -220,7 +220,7 @@ if __name__ == '__main__':
     train_loader = DataLoader(train_dataset, args.batch_size, shuffle=False, pin_memory=torch.cuda.is_available(), num_workers=args.num_workers)
     valid_loader = DataLoader(valid_dataset, args.batch_size, shuffle=False, pin_memory=torch.cuda.is_available(), num_workers=args.num_workers)
 
-    model = tiramisu.FCDenseNet67(n_classes=1)
+    model = tiramisu.FCDenseNet67(n_classes=1).cuda()
     model.apply(weights_init)
     #optimizer = torch.optim.RMSprop(model.parameters(), lr=args.lr, weight_decay=1e-4)
     optimizer = torch.optim.SGD(model.parameters(), args.lr,

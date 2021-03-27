@@ -54,9 +54,10 @@ The splitting is stratified so that the proportion of each dataset in the train 
 # Dependencies
 ```python
 conda create --name crack
-conda install -c anaconda pytorch-gpu 
-conda install -c conda-forge opencv 
-conda install matplotlib scipy numpy tqdm pillow
+conda install -c anaconda pytorch-gpu && \
+conda install -c conda-forge opencv && \
+conda install matplotlib scipy numpy tqdm pillow && \
+conda install numba
 ```
 
 ***

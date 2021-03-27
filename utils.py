@@ -60,7 +60,7 @@ def create_model(device, type ='vgg16'):
 
 def load_unet_vgg16(model_path):
     model = UNet16(pretrained=True)
-    checkpoint = torch.load(model_path, map_location=torch.device('cpu'))
+    checkpoint = torch.load(model_path)
     if 'model' in checkpoint:
         model.load_state_dict(checkpoint['model'])
     elif 'state_dict' in checkpoint:
@@ -68,6 +68,7 @@ def load_unet_vgg16(model_path):
     else:
         raise Exception('undefind model format')
 
+    model.cuda()
     model.eval()
 
     return model
@@ -82,6 +83,7 @@ def load_unet_resnet_101(model_path):
     else:
         raise Exception('undefind model format')
 
+    model.cuda()
     model.eval()
 
     return model
@@ -96,6 +98,7 @@ def load_unet_resnet_34(model_path):
     else:
         raise Exception('undefind model format')
 
+    model.cuda()
     model.eval()
 
     return model
