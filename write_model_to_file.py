@@ -3,7 +3,7 @@ import io
 
 filename: str = "models/model_best.pt"
 
-torch.load(filename)
+torch.load(filename, map_location=torch.device('cpu'))
 
 # Load ScriptModule from io.BytesIO object
 with open(filename, 'rb') as f:
