@@ -10,7 +10,7 @@ with open(filename, 'rb') as f:
     buffer = io.BytesIO(f.read())
 
 # Load all tensors to the original device
-torch.load(buffer)
+torch.load(buffer, map_location=torch.device('cpu'))
 
 # Load all tensors onto CPU, using a device
 buffer.seek(0)
@@ -22,5 +22,5 @@ torch.load(buffer, map_location='cpu')
 
 # Load with extra files.
 extra_files = {'foo.txt': ''}  # values will be replaced with data
-torch.load(filename, _extra_files=extra_files)
+torch.load(filename, _extra_files=extra_files, map_location=torch.device('cpu'))
 print(extra_files['foo.txt'])
