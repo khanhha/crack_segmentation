@@ -6,7 +6,7 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, Dataset, random_split
 import torch.nn.functional as F
 from torch.autograd import Variable
-import DiceLoss from dice_loss
+from dice_loss import DiceLoss
 import shutil
 from data_loader import ImgDataSet
 import os
