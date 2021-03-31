@@ -54,10 +54,10 @@ class DiceLoss(nn.Module):
             input: torch.Tensor,
             target: torch.Tensor) -> torch.Tensor:
         input = torch.reshape(input, (4, 1, 448, 448))
+        target = torch.reshape(target, (4, 1, 448, 448))
         if not torch.is_tensor(input):
             raise TypeError("Input type is not a torch.Tensor. Got {}"
                             .format(type(input)))
-        print(input)
         if not len(input.shape) == 4:
             raise ValueError("Invalid input shape, we expect BxNxHxW. Got: {}"
                              .format(input.shape))
