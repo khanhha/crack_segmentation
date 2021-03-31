@@ -6,6 +6,7 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader, Dataset, random_split
 import torch.nn.functional as F
 from torch.autograd import Variable
+import torchgeometry.losses.dice.DiceLoss as DiceLoss
 import shutil
 from data_loader import ImgDataSet
 import os
@@ -216,8 +217,6 @@ if __name__ == '__main__':
                         choices=['vgg16', 'resnet101', 'resnet34'])
 
     args = parser.parse_args()
-    print(f'batch size: {args.batch_size}')
-    print(f'workers: {args.num_workers}')
     os.makedirs(args.model_dir, exist_ok=True)
 
     DIR_IMG = os.path.join(args.data_dir, 'images')
@@ -239,7 +238,8 @@ if __name__ == '__main__':
     # crack_weight = 0.4*calc_crack_pixel_weight(DIR_MASK)
     # print(f'positive weight: {crack_weight}')
     # criterion = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([crack_weight]).to('cuda'))
-    criterion = nn.BCEWithLogitsLoss().to('cuda')
+    criterion = DiceLoss().to('cuda')
+    # criterion = nn.BCEWithLogitsLoss().to('cuda')
 
     channel_means = [0.485, 0.456, 0.406]
     channel_stds = [0.229, 0.224, 0.225]

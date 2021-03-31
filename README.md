@@ -100,6 +100,8 @@ I am very welcome to further idea from you. please drop me an email at khanhhh89
 - step 3: 
 ```python 
 python train_unet.py -data_dir ./crack_segmentation_dataset -model_dir ./models -model_type resnet34
+python train_unet.py -data_dir ./cfd/train -model_dir ./models/CFD -model_type resnet34
+python train_unet.py -data_dir ./CRACK500/train -model_dir ./models/CRACK500 -model_type resnet34
 ```
 
 # Result
