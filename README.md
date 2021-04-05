@@ -68,6 +68,7 @@ conda install numba
 - run the code
 ```pythonstub
 python inference_unet.py  -img_dir ./test_imgs -model_path ./models/model_unet_vgg_16_best.pt -model_type vgg16 -out_pred_dir ./test_results
+python inference_unet.py  -img_dir ./cfd/test -model_path ./models/CFD/model_best.pt -model_type resnet34 -out_pred_dir ./test_results/CFD
 # python inference_unet.py  -in_dir ./test_images -model_path ./models/model_unet_resnet_101_best.pt -out_dir ./test_result
 ```
 
@@ -114,6 +115,11 @@ The best result is achieved by UNet_Resnet_101 with IoU = and Dice =
 | DenseNet         |       |        |
 
 ***
+
+# Evaluate
+```python
+python evaluate_unet.py -ground_truth_dir ./cfd/test/masks -pred_dir ./test_results/CFD/
+```
 
 # Citation
 Note: please cite the corresponding papers when using these datasets.

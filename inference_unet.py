@@ -103,7 +103,7 @@ if __name__ == '__main__':
         model = load_unet_resnet_101(args.model_path)
     elif args.model_type  == 'resnet34':
         model = load_unet_resnet_34(args.model_path)
-        print(model)
+        # print(model)
     else:
         print('undefind model name pattern')
         exit()
