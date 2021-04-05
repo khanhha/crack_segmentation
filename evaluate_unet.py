@@ -19,7 +19,7 @@ def general_dice(y_true, y_pred):
     return dice(y_true, y_pred)
 
 def jaccard(y_true, y_pred):
-    # Intertsection = true positives
+    # Intersection = true positives
     intersection = (y_true * y_pred).sum()
     union = y_true.sum() + y_pred.sum() - intersection
     return (intersection + 1e-8) / (union + 1e-8)
@@ -61,7 +61,7 @@ def f1_loss(y_true: torch.Tensor, y_pred: torch.Tensor, is_training=False) -> to
     fp = ((1 - y_true) * y_pred).sum().to(torch.float32)
     fn = (y_true * (1 - y_pred)).sum().to(torch.float32)
 
-    epsilon = 1e-7
+    epsilon = 1e-8
 
     precision = tp / (tp + fp + epsilon)
     recall = tp / (tp + fn + epsilon)
@@ -69,6 +69,22 @@ def f1_loss(y_true: torch.Tensor, y_pred: torch.Tensor, is_training=False) -> to
     f1 = 2 * (precision * recall) / (precision + recall + epsilon)
     f1.requires_grad = is_training
     return f1
+
+def recall(y_true: torch.Tensor, y_pred: torch.Tensor) -> torch.Tensor:
+    tp = (y_true * y_pred).sum()
+    fp = ((1 - y_true) * y_pred).sum()
+    fn = (y_true * (1 - y_pred)).sum()
+
+    epsilon = 1e-8
+
+    return tp / (tp + fn + epsilon)
+
+def precision(y_true: torch.Tensor, y_pred: torch.Tensor) -> torch.Tensor:
+    tp = (y_true * y_pred).sum()
+    fp = ((1 - y_true) * y_pred).sum()
+    epsilon = 1e-8
+
+    return tp / (tp + fp + epsilon)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -81,6 +97,8 @@ if __name__ == '__main__':
     result_f1 = []
     result_dice = []
     result_jaccard = []
+    result_precision = []
+    result_recall = []
 
     paths = [path for path in  Path(args.ground_truth_dir).glob('*')]
     for file_name in tqdm(paths):
@@ -107,7 +125,12 @@ if __name__ == '__main__':
         result_f1 += [f1_loss(y_true, y_pred)]
         result_dice += [dice(y_true, y_pred)]
         result_jaccard += [jaccard(y_true, y_pred)]
+        result_precision += [precision(y_true, y_pred)]
+        result_recall += [recall(y_true, y_pred)]
+
 
     print('F1 loss = ', np.mean(result_f1), np.std(result_f1))
     print('Dice = ', np.mean(result_dice), np.std(result_dice))
     print('Jaccard = ', np.mean(result_jaccard), np.std(result_jaccard))
+    print('Precision = ', np.mean(result_precision), np.std(result_precision))
+    print('Recall = ', np.mean(result_recall), np.std(result_recall))

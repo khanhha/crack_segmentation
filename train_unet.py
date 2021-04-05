@@ -238,8 +238,8 @@ if __name__ == '__main__':
     # crack_weight = 0.4*calc_crack_pixel_weight(DIR_MASK)
     # print(f'positive weight: {crack_weight}')
     # criterion = nn.BCEWithLogitsLoss(pos_weight=torch.Tensor([crack_weight]).to('cuda'))
-    criterion = DiceLoss().to('cuda')
-    # criterion = nn.BCEWithLogitsLoss().to('cuda')
+    # criterion = DiceLoss().to('cuda')
+    criterion = nn.BCEWithLogitsLoss().to('cuda')
 
     channel_means = [0.485, 0.456, 0.406]
     channel_stds = [0.229, 0.224, 0.225]
