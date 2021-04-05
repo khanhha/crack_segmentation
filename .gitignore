@@ -1,6 +1,7 @@
 models/*.pt
 .idea/*
-*pycache*
+__pycache*
+unet/__pycache*
 venv*
 test_imgs/*
 test_results/*
