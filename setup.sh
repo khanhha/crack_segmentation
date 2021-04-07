@@ -1,3 +1,4 @@
+#!/bin/bash
 mkdir CRACK500
 mkdir CRACK500/test
 mkdir CRACK500/test/images
