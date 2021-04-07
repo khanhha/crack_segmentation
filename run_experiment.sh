@@ -29,7 +29,6 @@ python inference_unet.py -img_dir ./CRACK500/test/images -model_path ./Experimen
 python evaluate_unet.py -ground_truth_dir ./CRACK500/test/masks -pred_dir ./Experiment/CRACK500/test_results/first
 } 2>&1 | tee Experiment/Crack500/test_results/Crack0001First.log
 
-
 python train_unet.py -data_dir ./CRACK500/train -model_dir ./Experiment/CRACK500/model/first -model_type resnet34 -lr 0.005
 python train_unet.py -data_dir ./CRACK500/train -model_dir ./Experiment/CRACK500/model/first -model_type resnet34 -lr 0.01
 python train_unet.py -data_dir ./CRACK500/train -model_dir ./Experiment/CRACK500/model/first -model_type resnet34 -lr 0.015
