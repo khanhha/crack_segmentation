@@ -22,8 +22,8 @@ mv crack_segmentation_dataset/test/masks/CRACK500* CRACK500/test/masks
 
 mv crack_segmentation_dataset/train/images/CFD* cfd/train/images &&
 mv crack_segmentation_dataset/test/images/CFD* cfd/test/images
-mv crack_segmentation_dataset/train/masks/CFD* cfd/train/masks &&
-mv crack_segmentation_dataset/test/masks/CFD* cfd/test/masks
+mv crack_segmentation_dataset/train/masks/CFD* CFD/train/masks &&
+mv crack_segmentation_dataset/test/masks/CFD* CFD/test/masks
 
 conda create --name crack &&
 conda activate crack
