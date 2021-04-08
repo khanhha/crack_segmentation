@@ -1,4 +1,6 @@
 #!/bin/bash
+sudo rm -r ./Experiment
+
 mkdir Experiment
 mkdir Experiment/CRACK500
 mkdir Experiment/CRACK500/test_results
@@ -68,7 +70,6 @@ sudo rm -r ./Experiment/CRACK500/model/first/*
 # Train CFD First Run (Log files are named as follows: CFD<decimals LR>First.log
 python train_unet.py -data_dir ./CFD/train -model_dir ./Experiment/CFD/model/first -model_type resnet34 -lr 0.001
 python inference_unet.py -img_dir ./CFD/test/images -model_path ./Experiment/CFD/model/first/model_best.pt -model_type resnet34 -out_pred_dir ./Experiment/CFD/test_results/first
-python evaluate_unet.py -ground_truth_dir ./CFD/test/masks -pred_dir ./Experiment/CFD/test_results/first > Experiment/CFD/test_results/CFD001First.log
 python evaluate_unet.py -ground_truth_dir ./CFD/test/masks -pred_dir ./Experiment/CFD/test_results/first > Experiment/CFD/test_results/CFD001First.log
 sudo rm -r ./Experiment/CFD/model/first/*
 
