@@ -22,3 +22,6 @@ In the vm run `wget STATION_LINK` with STATION_LINK being the link
 
 ### Run setup script
 After the download of the zip file has completed, you should be good to go and run the setup script with `sh setup.sh`
+
+### Run Experiment
+You can now run the second run of the experiment with `sh run_second_experiment.sh` (Don't 'sudo' this command, cause it will somehow throw syntax errors then)
