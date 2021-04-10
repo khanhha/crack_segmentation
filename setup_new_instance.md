@@ -1,7 +1,7 @@
 ### Setup SSH key
 Run `sudo ssh-keygen` in the vm to generate a new ssh key.
 
-Run `echo ~/.ssh/id_rsa.pub` to get the key echoed to the terminal.
+Run `cat ~/.ssh/id_rsa.pub` to get the key printed to the terminal.
 
 Copy this key and input it in GitHub. Account Settings > SSH and GPG Keys > New SSH Key
 
